@@ -49,7 +49,7 @@ if uploaded_image is not None:
     thickness = st.slider("Select line thickness", 0.01, 5.0, 0.1, step=0.01)
     
     # Slider to control the upscaling factor for smoother processing
-    upscale_factor = st.slider("Upscale factor (higher values reduce pixelation)", 1, 4, 2)
+    upscale_factor = st.slider("Upscale factor (higher values reduce pixelation)", 1, 20, 2)
 
     # Process the image
     processed_image, original_image = process_image(uploaded_image, thickness, upscale_factor)
