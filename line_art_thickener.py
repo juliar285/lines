@@ -17,9 +17,9 @@ def process_image(uploaded_image, thickness=0.1):
     # Apply Canny edge detection
     edges = cv2.Canny(gray_image, 50, 150, apertureSize=3)
 
-    # Apply dilation to thicken the edges
-    if thickness > 0.1:
-        kernel_size = int(max(1, thickness * 1.5))  # Smaller scaling factor for more precise control
+    # Apply dilation to thicken the edges based on the slider value
+    if thickness > 0.01:
+        kernel_size = int(thickness * 10)  # Directly scale the kernel size for visible changes
         kernel = np.ones((kernel_size, kernel_size), np.uint8)
         thickened_edges = cv2.dilate(edges, kernel, iterations=1)
     else:
@@ -35,15 +35,15 @@ def process_image(uploaded_image, thickness=0.1):
     return image_with_black_edges, image  # Return the processed and original images
 
 # Streamlit UI
-st.title("Line Art Thickener with Precise Control")
+st.title("Line Art Thickener with Refined Control")
 st.write("Upload your line art and we'll thicken the edges and smooth them for you!")
 
 # Upload the image
 uploaded_image = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"])
 
 if uploaded_image is not None:
-    # Slider to control line thickness with smaller values
-    thickness = st.slider("Select line thickness", 0.01, 1.0, 0.1, step=0.01)
+    # Slider to control line thickness with finer scaling
+    thickness = st.slider("Select line thickness", 0.01, 5.0, 0.1, step=0.01)
     
     # Process the image
     processed_image, original_image = process_image(uploaded_image, thickness)
