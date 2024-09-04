@@ -6,7 +6,7 @@ from io import BytesIO
 import matplotlib.pyplot as plt
 
 # Function to process the image
-def process_image(uploaded_image, thickness=0.1, upscale_factor=2):
+def process_image(uploaded_image, thickness=0.5, upscale_factor=2):
     # Convert the uploaded image to an OpenCV format
     file_bytes = np.asarray(bytearray(uploaded_image.read()), dtype=np.uint8)
     image = cv2.imdecode(file_bytes, 1)
@@ -45,8 +45,8 @@ st.write("Upload your line art, adjust the line thickness, and ensure the final 
 uploaded_image = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"])
 
 if uploaded_image is not None:
-    # Slider to control line thickness
-    thickness = st.slider("Select line thickness", 0.01, 5.0, 0.1, step=0.01)
+    # Slider to control line thickness with a default of 0.5 and a range from 0.01 to 1.0
+    thickness = st.slider("Select line thickness", 0.5, 1.0, 0.5, step=0.01)
     
     # Slider to control the upscaling factor for smoother processing, max value set to 6
     upscale_factor = st.slider("Upscale factor (higher values reduce pixelation)", 1, 6, 2)
