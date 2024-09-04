@@ -38,8 +38,8 @@ def process_image(uploaded_image, thickness=0.1, upscale_factor=2):
     return result_image, image  # Return the processed and original images
 
 # Streamlit UI
-st.title("Line Art Thickener with Bilateral Filtering")
-st.write("Upload your line art, adjust the line thickness, and we'll reduce pixelation while processing the image!")
+st.title("Line Art Thickener with 300 DPI Output")
+st.write("Upload your line art, adjust the line thickness, and ensure the final image is saved at 300 DPI!")
 
 # Upload the image
 uploaded_image = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"])
@@ -48,8 +48,8 @@ if uploaded_image is not None:
     # Slider to control line thickness
     thickness = st.slider("Select line thickness", 0.01, 5.0, 0.1, step=0.01)
     
-    # Slider to control the upscaling factor for smoother processing
-    upscale_factor = st.slider("Upscale factor (higher values reduce pixelation)", 1, 20, 2)
+    # Slider to control the upscaling factor for smoother processing, max value set to 6
+    upscale_factor = st.slider("Upscale factor (higher values reduce pixelation)", 1, 6, 2)
 
     # Process the image
     processed_image, original_image = process_image(uploaded_image, thickness, upscale_factor)
@@ -61,10 +61,10 @@ if uploaded_image is not None:
     if st.button('Accept Processed Image'):
         st.success("You have accepted the processed image!")
         
-        # Provide download option
+        # Provide download option with 300 DPI
         buf = BytesIO()
         processed_image_pil = Image.fromarray(cv2.cvtColor(processed_image, cv2.COLOR_BGR2RGB))
-        processed_image_pil.save(buf, format="PNG")
-        st.download_button(label="Download Processed Image", data=buf.getvalue(), file_name="processed_image.png", mime="image/png")
+        processed_image_pil.save(buf, format="PNG", dpi=(300, 300))  # Save at 300 DPI
+        st.download_button(label="Download Processed Image at 300 DPI", data=buf.getvalue(), file_name="processed_image_300dpi.png", mime="image/png")
     else:
         st.warning("You haven't accepted the processed image yet.")
