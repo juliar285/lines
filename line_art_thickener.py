@@ -6,13 +6,16 @@ from io import BytesIO
 import matplotlib.pyplot as plt
 
 # Function to process the image
-def process_image(uploaded_image, thickness=0.1, blur_intensity=0):
+def process_image(uploaded_image, thickness=0.1, upscale_factor=2):
     # Convert the uploaded image to an OpenCV format
     file_bytes = np.asarray(bytearray(uploaded_image.read()), dtype=np.uint8)
     image = cv2.imdecode(file_bytes, 1)
 
+    # Upscale the image for smoother processing
+    image_upscaled = cv2.resize(image, (0, 0), fx=upscale_factor, fy=upscale_factor, interpolation=cv2.INTER_CUBIC)
+
     # Convert to grayscale
-    gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    gray_image = cv2.cvtColor(image_upscaled, cv2.COLOR_BGR2GRAY)
 
     # Apply Canny edge detection
     edges = cv2.Canny(gray_image, 50, 150, apertureSize=3)
@@ -22,21 +25,21 @@ def process_image(uploaded_image, thickness=0.1, blur_intensity=0):
     kernel = np.ones((kernel_size, kernel_size), np.uint8)
     thickened_edges = cv2.dilate(edges, kernel, iterations=1)
 
-    # Apply anti-aliasing (optional Gaussian blur)
-    if blur_intensity > 0:
-        smoothed_edges = cv2.GaussianBlur(thickened_edges, (blur_intensity, blur_intensity), 0)
-    else:
-        smoothed_edges = thickened_edges
+    # Apply bilateral filtering to reduce pixelation while keeping edges sharp
+    smoothed_edges = cv2.bilateralFilter(thickened_edges, d=9, sigmaColor=75, sigmaSpace=75)
 
-    # Create a copy of the original image and apply the thickened black edges
-    image_with_black_edges = image.copy()
+    # Create a copy of the upscaled image and apply the thickened black edges
+    image_with_black_edges = image_upscaled.copy()
     image_with_black_edges[smoothed_edges != 0] = [0, 0, 0]  # Set thickened edges to black
 
-    return image_with_black_edges, image  # Return the processed and original images
+    # Downscale the image back to the original resolution
+    result_image = cv2.resize(image_with_black_edges, (image.shape[1], image.shape[0]), interpolation=cv2.INTER_AREA)
+
+    return result_image, image  # Return the processed and original images
 
 # Streamlit UI
-st.title("Line Art Thickener with Adjustable Blur")
-st.write("Upload your line art, adjust the line thickness and blur settings, and we'll process the image for you!")
+st.title("Line Art Thickener with Bilateral Filtering")
+st.write("Upload your line art, adjust the line thickness, and we'll reduce pixelation while processing the image!")
 
 # Upload the image
 uploaded_image = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"])
@@ -45,11 +48,11 @@ if uploaded_image is not None:
     # Slider to control line thickness
     thickness = st.slider("Select line thickness", 0.01, 5.0, 0.1, step=0.01)
     
-    # Slider to control blur intensity (0 means no blur)
-    blur_intensity = st.slider("Select blur intensity (0 for no blur)", 0, 10, 0)
+    # Slider to control the upscaling factor for smoother processing
+    upscale_factor = st.slider("Upscale factor (higher values reduce pixelation)", 1, 4, 2)
 
     # Process the image
-    processed_image, original_image = process_image(uploaded_image, thickness, blur_intensity)
+    processed_image, original_image = process_image(uploaded_image, thickness, upscale_factor)
     
     # Show both images side by side for comparison
     st.image([original_image, processed_image], caption=["Original Image", "Processed Image"], use_column_width=True)
