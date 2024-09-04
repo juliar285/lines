@@ -1,48 +1,56 @@
-import cv2
-import numpy as np
 import streamlit as st
+import cairosvg
+import svgwrite
+from io import BytesIO
 from PIL import Image
-import matplotlib.pyplot as plt
+import numpy as np
 
-# Function to process the image
-def process_image(uploaded_image):
-    # Convert the uploaded image to an OpenCV format
-    file_bytes = np.asarray(bytearray(uploaded_image.read()), dtype=np.uint8)
-    image = cv2.imdecode(file_bytes, 1)
+# Function to convert the uploaded PNG image to SVG
+def convert_image_to_svg(uploaded_image):
+    # Read the uploaded image
+    image = Image.open(uploaded_image)
+    
+    # Save the image to a byte stream
+    image_bytes = BytesIO()
+    image.save(image_bytes, format="PNG")
+    image_bytes.seek(0)
 
-    # Convert to grayscale
-    gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    # Convert PNG to SVG using cairosvg
+    svg_output = cairosvg.svg2svg(bytestring=image_bytes.read())
+    
+    return svg_output
 
-    # Apply Canny edge detection
-    edges = cv2.Canny(gray_image, 50, 150, apertureSize=3)
+# Function to modify the SVG paths and increase the stroke width
+def modify_svg_stroke(svg_data, stroke_width=3):
+    # Create an SVG document using svgwrite
+    dwg = svgwrite.Drawing()
+    # Parse the original SVG and update stroke-width for all paths
+    for elem in svgwrite.etree.fromstring(svg_data).getchildren():
+        if elem.tag.endswith('path'):  # Modify only paths
+            elem.set('stroke-width', str(stroke_width))  # Modify stroke-width
+        dwg.add(dwg.element_fromstring(svgwrite.etree.tostring(elem)))
 
-    # Apply dilation to thicken the edges
-    kernel = np.ones((2, 2), np.uint8)
-    thickened_edges = cv2.dilate(edges, kernel, iterations=1)
-
-    # Create a copy of the original image and apply the thickened black edges
-    image_with_black_edges = image.copy()
-    image_with_black_edges[thickened_edges != 0] = [0, 0, 0]  # Set thickened edges to black
-
-    return image_with_black_edges, image  # Return the processed and original images
+    # Save modified SVG to a string
+    return dwg.tostring()
 
 # Streamlit UI
-st.title("Line Art Thickener")
-st.write("Upload your line art and we'll thicken the edges for you!")
+st.title("Line Art SVG Manipulator")
+st.write("Upload your line art, and we'll convert it to SVG, thicken the lines, and display it.")
 
 # Upload the image
 uploaded_image = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"])
 
 if uploaded_image is not None:
-    # Process the image
-    processed_image, original_image = process_image(uploaded_image)
+    # Convert image to SVG
+    svg_data = convert_image_to_svg(uploaded_image)
     
-    # Show both images side by side for comparison
-    st.image([original_image, processed_image], caption=["Original Image", "Processed Image"], use_column_width=True)
-
-    # Option to accept the processed image
-    if st.button('Accept Processed Image'):
-        st.success("You have accepted the processed image!")
-        # Here you can add further functionality to save or download the image if needed
-    else:
-        st.warning("You haven't accepted the processed image yet.")
+    # Modify the stroke width in the SVG paths
+    stroke_width = st.slider("Adjust line thickness:", 1, 10, 3)  # Slider for line thickness
+    modified_svg = modify_svg_stroke(svg_data, stroke_width)
+    
+    # Display the original and modified SVG
+    st.write("Here is your processed SVG with thicker lines:")
+    st.image(uploaded_image, caption="Original Image")
+    
+    # Display the modified SVG (as SVGs are scalable, they may need specific rendering in Streamlit)
+    st.download_button(label="Download Modified SVG", data=modified_svg, file_name="modified_image.svg", mime="image/svg+xml")
