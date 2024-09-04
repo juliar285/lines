@@ -4,3 +4,4 @@ streamlit
 Pillow
 svgwrite
 svgpathtools
+matplotlib
