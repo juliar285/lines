@@ -1,6 +1,6 @@
 import cv2
 import numpy as np
-import streamlit
+import streamlit as st
 from PIL import Image
 import matplotlib.pyplot as plt
 
