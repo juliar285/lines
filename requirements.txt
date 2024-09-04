@@ -2,7 +2,6 @@ opencv-python-headless
 numpy
 streamlit
 Pillow
-matplotlib
 svgwrite
 svgpathtools
-cairosvg
+potrace
