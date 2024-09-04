@@ -3,3 +3,6 @@ numpy
 streamlit
 Pillow
 matplotlib
+svgwrite
+svgpathtools
+cairosvg
