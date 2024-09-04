@@ -1,66 +1,48 @@
-import streamlit as st
-import svgwrite
-import potrace
-from PIL import Image
+import cv2
 import numpy as np
-from io import BytesIO
+import streamlit as st
+from PIL import Image
+import matplotlib.pyplot as plt
 
-# Function to convert PNG/JPG to black-and-white bitmap for Potrace
-def convert_image_to_bw(uploaded_image):
-    # Open the image using PIL
-    image = Image.open(uploaded_image).convert('L')  # Convert to grayscale
-    image = image.point(lambda x: 0 if x < 128 else 255, '1')  # Binarize the image
-    return image
+# Function to process the image
+def process_image(uploaded_image):
+    # Convert the uploaded image to an OpenCV format
+    file_bytes = np.asarray(bytearray(uploaded_image.read()), dtype=np.uint8)
+    image = cv2.imdecode(file_bytes, 1)
 
-# Function to convert the BW image to SVG using Potrace
-def convert_to_svg(bw_image):
-    # Convert image to numpy array and prepare for Potrace
-    bitmap = potrace.Bitmap(np.array(bw_image))
-    path = bitmap.trace()
+    # Convert to grayscale
+    gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
-    # Create an SVG document
-    dwg = svgwrite.Drawing(size=(bw_image.width, bw_image.height))
-    
-    # Add paths from Potrace to SVG
-    for curve in path:
-        d = "M {} {} ".format(curve.start_point[0], curve.start_point[1])
-        for segment in curve:
-            if isinstance(segment, potrace.Curve.Corner):
-                d += "L {} {} ".format(segment.c[0], segment.c[1])
-            else:
-                d += "C {} {} {} {} {} {} ".format(segment.c1[0], segment.c1[1], segment.c2[0], segment.c2[1], segment.end_point[0], segment.end_point[1])
-        d += "Z"
-        dwg.add(dwg.path(d, fill="none", stroke="black", stroke_width="1"))
+    # Apply Canny edge detection
+    edges = cv2.Canny(gray_image, 50, 150, apertureSize=3)
 
-    return dwg.tostring()
+    # Apply dilation to thicken the edges
+    kernel = np.ones((2, 2), np.uint8)
+    thickened_edges = cv2.dilate(edges, kernel, iterations=1)
 
-# Function to modify the stroke width of the generated SVG
-def modify_svg_stroke(svg_data, stroke_width=3):
-    dwg = svgwrite.Drawing()
-    for elem in svgwrite.etree.fromstring(svg_data).getchildren():
-        if elem.tag.endswith('path'):
-            elem.set('stroke-width', str(stroke_width))
-        dwg.add(dwg.element_fromstring(svgwrite.etree.tostring(elem)))
-    return dwg.tostring()
+    # Create a copy of the original image and apply the thickened black edges
+    image_with_black_edges = image.copy()
+    image_with_black_edges[thickened_edges != 0] = [0, 0, 0]  # Set thickened edges to black
+
+    return image_with_black_edges, image  # Return the processed and original images
 
 # Streamlit UI
-st.title("Image to SVG Converter with Line Thickening")
-st.write("Upload your PNG or JPG, we'll convert it to SVG, and allow you to thicken the lines.")
+st.title("Line Art Thickener")
+st.write("Upload your line art and we'll thicken the edges for you!")
 
-# Upload an image
+# Upload the image
 uploaded_image = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"])
 
 if uploaded_image is not None:
-    # Convert uploaded image to black-and-white
-    bw_image = convert_image_to_bw(uploaded_image)
+    # Process the image
+    processed_image, original_image = process_image(uploaded_image)
     
-    # Convert the BW image to SVG using Potrace
-    svg_data = convert_to_svg(bw_image)
-    
-    # Modify the stroke width
-    stroke_width = st.slider("Adjust line thickness:", 1, 10, 3)
-    modified_svg = modify_svg_stroke(svg_data, stroke_width)
-    
-    # Show original image and provide SVG download link
-    st.image(uploaded_image, caption="Original Image")
-    st.download_button(label="Download Modified SVG", data=modified_svg, file_name="modified_image.svg", mime="image/svg+xml")
+    # Show both images side by side for comparison
+    st.image([original_image, processed_image], caption=["Original Image", "Processed Image"], use_column_width=True)
+
+    # Option to accept the processed image
+    if st.button('Accept Processed Image'):
+        st.success("You have accepted the processed image!")
+        # Here you can add further functionality to save or download the image if needed
+    else:
+        st.warning("You haven't accepted the processed image yet.")
