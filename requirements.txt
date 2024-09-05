@@ -7,3 +7,4 @@ svgpathtools
 matplotlib
 torch
 torchvision
+git+https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix.git
