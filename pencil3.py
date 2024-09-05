@@ -36,7 +36,7 @@ if uploaded_file is not None:
     pencil_sketch_image = cv2.divide(gray_image, inverted_blur, scale=256.0)
 
     # Step 4: Apply a Bilateral Filter to reduce noise while preserving details
-    bilateral_filtered = cv2.bilateralFilter(pencil_sketch_image, d=5, sigmaColor=50, sigmaSpace=50)
+    #bilateral_filtered = cv2.bilateralFilter(pencil_sketch_image, d=5, sigmaColor=50, sigmaSpace=50)
 
     # Step 5: Add a threshold slider for fine-tuning the binary conversion
     threshold_value = st.slider("Threshold Value for Binary Conversion", 50, 255, 244)
