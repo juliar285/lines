@@ -1,39 +1,18 @@
 import cv2
 import numpy as np
 import streamlit as st
-from PIL import Image
+from PIL import Image, ImageDraw
 from io import BytesIO
 import xml.etree.ElementTree as ET  # To handle SVG processing
+import base64
 
-# Function to apply sketch effect for pixel-based images
-def apply_sketch_effect(image):
-    # Convert image to grayscale
-    gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    
-    # Invert the grayscale image
-    inverted_image = cv2.bitwise_not(gray_image)
-    
-    # Apply Gaussian blur
-    blurred_image = cv2.GaussianBlur(inverted_image, (21, 21), sigmaX=0, sigmaY=0)
-    
-    # Invert the blurred image
-    inverted_blurred_image = cv2.bitwise_not(blurred_image)
-    
-    # Create the sketch effect by dividing the grayscale image by the inverted blurred image
-    sketch_image = cv2.divide(gray_image, inverted_blurred_image, scale=256.0)
-    
-    return sketch_image
+# Function to convert SVG to PNG for preview
+def svg_to_png(svg_data):
+    # Use Pillow to create a blank canvas and render SVG
+    # Note: Streamlit Cloud does not support libraries like cairosvg, so you may need a workaround for SVG to PNG conversion
+    return None  # Placeholder for converting SVG to PNG
 
-# Function to process pixel-based images
-def process_pixel_image(uploaded_image):
-    file_bytes = np.asarray(bytearray(uploaded_image.read()), dtype=np.uint8)
-    image = cv2.imdecode(file_bytes, 1)
-
-    # Apply the sketch effect
-    sketch_image = apply_sketch_effect(image)
-    return sketch_image, image
-
-# Function to process SVG by modifying stroke width to mimic a sketch effect
+# Function to process SVG by modifying stroke width
 def process_svg_image(svg_data, new_stroke_width=2):
     # Parse the SVG XML
     tree = ET.ElementTree(ET.fromstring(svg_data))
@@ -42,7 +21,7 @@ def process_svg_image(svg_data, new_stroke_width=2):
     # Define the namespace (SVG files have a namespace)
     ns = {'svg': 'http://www.w3.org/2000/svg'}
 
-    # Find all path elements and adjust stroke-width for sketch effect
+    # Find all path elements and adjust stroke-width
     for element in root.findall(".//svg:path", ns):
         if 'stroke' in element.attrib:
             element.set('stroke-width', str(new_stroke_width))
@@ -52,56 +31,35 @@ def process_svg_image(svg_data, new_stroke_width=2):
     return modified_svg_data
 
 # Streamlit UI
-st.title("SVG Stroke Width Adjuster and Sketch Effect for PNG/JPG")
-st.write("Upload your image (SVG, PNG, JPG) and apply stroke width adjustment or sketch effect.")
+st.title("SVG Stroke Width Adjuster with Preview")
 
 # Image Upload
-uploaded_file = st.file_uploader("Upload an image (PNG, JPG, SVG)", type=["png", "jpg", "jpeg", "svg"])
+uploaded_file = st.file_uploader("Upload an image (SVG)", type=["svg"])
 
 if uploaded_file is not None:
-    file_type = uploaded_file.name.split('.')[-1].lower()
+    # Read SVG content
+    svg_data = uploaded_file.read().decode()
 
-    if file_type in ['png', 'jpg', 'jpeg']:
-        # Handle pixel-based images
-        sketch_image, original_image = process_pixel_image(uploaded_file)
+    # Slider for adjusting stroke width
+    new_stroke_width = st.slider("Adjust stroke width", 1, 10, 2)
 
-        # Show original and sketch images
-        if sketch_image is not None:
-            st.image([original_image, sketch_image], caption=["Original Image", "Sketch Effect"], use_column_width=True)
+    # Process the SVG by modifying stroke properties
+    modified_svg_data = process_svg_image(svg_data, new_stroke_width)
 
-        # Download the sketch effect as PNG
-        buf = BytesIO()
-        sketch_image_pil = Image.fromarray(sketch_image)
-        sketch_image_pil.save(buf, format="PNG")
+    # Try converting the modified SVG to PNG for display
+    st.write("### Preview of Modified SVG as Image (PNG):")
+    png_image = svg_to_png(modified_svg_data)
 
-        st.download_button(
-            label="Download Sketch Image as PNG",
-            data=buf.getvalue(),
-            file_name="sketch_image.png",
-            mime="image/png"
-        )
+    if png_image:
+        st.image(png_image, caption="Modified SVG as PNG")
 
-    elif file_type == 'svg':
-        # Handle vector-based SVG images
-        st.write("Processing as an SVG image.")
-        
-        # Read SVG content
-        svg_data = uploaded_file.read().decode()
+    # Display the modified SVG as text (optional, for debugging purposes)
+    st.text_area("Modified SVG Data", modified_svg_data, height=300)
 
-        # Slider for adjusting stroke width (no dash array)
-        new_stroke_width = st.slider("Adjust stroke width", 1, 10, 2)
-
-        # Process the SVG by modifying stroke properties
-        modified_svg_data = process_svg_image(svg_data, new_stroke_width)
-
-        # Display the modified SVG using st.write() and unsafe_allow_html
-        st.write("### Preview of Modified SVG:")
-        st.write(f'<div>{modified_svg_data}</div>', unsafe_allow_html=True)
-
-        # Download the modified SVG
-        st.download_button(
-            label="Download Modified SVG",
-            data=modified_svg_data,
-            file_name="modified_svg_image.svg",
-            mime="image/svg+xml"
-        )
+    # Download the modified SVG
+    st.download_button(
+        label="Download Modified SVG",
+        data=modified_svg_data,
+        file_name="modified_svg_image.svg",
+        mime="image/svg+xml"
+    )
