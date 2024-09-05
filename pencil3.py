@@ -3,55 +3,49 @@ from PIL import Image
 import vtracer
 import io
 import numpy as np
-import cv2
 
 # Streamlit app layout
-st.title("SVG Conversion with Edge Detection and Contour Drawing")
+st.title("Image to SVG Converter with Adjustable Parameters")
 
-# Image upload
-uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "png"])
+# Step 1: Upload an image
+uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "png", "svg"])
 
 if uploaded_file is not None:
-    # Step 1: Convert the uploaded image to bytes
+    # Display the uploaded image
     image = Image.open(uploaded_file)
-    
-    # Display the original image
     st.image(image, caption='Uploaded Image', use_column_width=True)
 
+    # Convert the image to bytes for processing
     img_byte_array = io.BytesIO()
     image.save(img_byte_array, format='PNG')
     img_bytes = img_byte_array.getvalue()
 
-    # Step 2: Convert the image to OpenCV format
-    open_cv_image = np.array(image)
-    open_cv_image = cv2.cvtColor(open_cv_image, cv2.COLOR_RGBA2RGB)
+    # Step 2: Adjust conversion parameters using sliders
+    st.sidebar.title("SVG Conversion Parameters")
+    
+    # Select color mode
+    colormode = st.sidebar.selectbox("Color Mode", ["color", "binary"])
+    
+    # Adjust path precision
+    path_precision = st.sidebar.slider("Path Precision", 1, 10, 6)
 
-    # Step 3: Apply Canny Edge Detection
-    edges = cv2.Canny(open_cv_image, 100, 200)
+    # Thresholds for details
+    color_precision = st.sidebar.slider("Color Precision", 1, 10, 6)
+    layer_difference = st.sidebar.slider("Layer Difference", 1, 50, 16)
 
-    # Step 4: Find contours based on the edges
-    contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    # Apply conversion to SVG using vtracer
+    svg_str = vtracer.convert_image_to_svg_py(
+        img_bytes, 
+        None,  # Output path not needed since we work with strings
+        colormode=colormode, 
+        path_precision=path_precision, 
+        color_precision=color_precision, 
+        layer_difference=layer_difference
+    )
 
-    # Step 5: Draw the contours on a blank image (same size as original)
-    contour_image = np.zeros_like(gray_image)  # Create a blank image
-    cv2.drawContours(contour_image, contours, -1, (255), thickness=2)  # Draw contours in white
-
-    # Step 6: Apply a threshold slider to fine-tune the binary conversion
-    threshold_value = st.slider("Threshold Value for Edge Detection", 50, 255, 200)
-    _, binary_image = cv2.threshold(contour_image, threshold_value, 255, cv2.THRESH_BINARY)
-
-    # Step 7: Convert the contour-drawn image back to PNG format
-    sketch_pil_image = Image.fromarray(binary_image)
-    img_byte_array = io.BytesIO()
-    sketch_pil_image.save(img_byte_array, format='PNG')
-    img_bytes = img_byte_array.getvalue()
-
-    # Step 8: Convert the final image with contours to SVG using vtracer
-    svg_str = vtracer.convert_raw_image_to_svg(img_bytes, img_format='png')
-
-    # Step 9: Display the SVG output
-    st.write("### Contour-drawn SVG (with Adjustable Edge Detection):")
+    # Step 3: Display the SVG output
+    st.write("### Converted SVG:")
     st.write(f'<div>{svg_str}</div>', unsafe_allow_html=True)
 
-    # Provide a download option for the SVG file
-    st.download_button(label="Download SVG", data=svg_str, file_name="contour_sketch.svg", mime="image/svg+xml")
+    # Step 4: Provide a download button for the SVG result
+    st.download_button(label="Download SVG", data=svg_str, file_name="converted_image.svg", mime="image/svg+xml")
