@@ -99,8 +99,9 @@ if uploaded_file is not None:
         # Process the SVG by modifying stroke properties
         modified_svg_data = process_svg_image(svg_data, new_stroke_width, dasharray)
 
-        # Display the modified SVG as text (optionally render it)
-        st.text_area("Modified SVG Data", modified_svg_data, height=300)
+        # Embed the modified SVG into the Streamlit app for preview
+        st.write("### Preview of Modified SVG:")
+        st.markdown(f'<div>{modified_svg_data}</div>', unsafe_allow_html=True)
 
         # Download the modified SVG
         st.download_button(
