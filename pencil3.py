@@ -37,8 +37,11 @@ if uploaded_file is not None:
     inverted_blur = 255 - blurred
     pencil_sketch_image = cv2.divide(gray_image, inverted_blur, scale=256.0)
 
-    # Step 4: Convert to binary (black and white) image
-    _, binary_image = cv2.threshold(pencil_sketch_image, 128, 255, cv2.THRESH_BINARY)
+    # Step 4: Allow user to adjust threshold value
+    threshold_value = st.slider("Select Threshold Value", min_value=50, max_value=200, value=100, step=1)
+
+    # Step 5: Convert to binary (black and white) image with adjustable threshold
+    _, binary_image = cv2.threshold(pencil_sketch_image, threshold_value, 255, cv2.THRESH_BINARY)
 
     # Convert the binary image back to PNG
     sketch_pil_image = Image.fromarray(binary_image)
@@ -46,14 +49,14 @@ if uploaded_file is not None:
     sketch_pil_image.save(png_buffer, format='PNG')
     png_data = png_buffer.getvalue()
 
-    # Step 5: Display the black-and-white pencil sketch (PNG)
+    # Step 6: Display the black-and-white pencil sketch (PNG)
     st.write("### Pencil Sketch (Black and White PNG):")
     st.image(binary_image, channels="GRAY", use_column_width=True)
 
     # Add a download button for the binary (black and white) PNG version of the pencil sketch
     st.download_button(label="Download Pencil Sketch (Black & White PNG)", data=png_data, file_name="pencil_sketch_black_white.png", mime="image/png")
 
-    # Step 6: Convert the black-and-white PNG to SVG using vtracer
+    # Step 7: Convert the black-and-white PNG to SVG using vtracer
     svg_sketch_str = vtracer.convert_raw_image_to_svg(png_data, img_format='png')
 
     # Display the SVG output of the black-and-white pencil sketch using HTML embedding
