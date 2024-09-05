@@ -33,8 +33,8 @@ def process_pixel_image(uploaded_image):
     sketch_image = apply_sketch_effect(image)
     return sketch_image, image
 
-# Function to process SVG by modifying stroke style to mimic a sketch effect
-def process_svg_image(svg_data, new_stroke_width=2, dasharray="5,5"):
+# Function to process SVG by modifying stroke width to mimic a sketch effect
+def process_svg_image(svg_data, new_stroke_width=2):
     # Parse the SVG XML
     tree = ET.ElementTree(ET.fromstring(svg_data))
     root = tree.getroot()
@@ -42,19 +42,18 @@ def process_svg_image(svg_data, new_stroke_width=2, dasharray="5,5"):
     # Define the namespace (SVG files have a namespace)
     ns = {'svg': 'http://www.w3.org/2000/svg'}
 
-    # Find all path elements and adjust stroke-width and stroke-dasharray for sketch effect
+    # Find all path elements and adjust stroke-width for sketch effect
     for element in root.findall(".//svg:path", ns):
         if 'stroke' in element.attrib:
             element.set('stroke-width', str(new_stroke_width))
-            element.set('stroke-dasharray', dasharray)
 
     # Convert the modified SVG back to string
     modified_svg_data = ET.tostring(root, encoding='unicode')
     return modified_svg_data
 
 # Streamlit UI
-st.title("Sketch Effect for SVG and Raster Images")
-st.write("Upload your image (SVG, PNG, JPG) and apply a sketch effect.")
+st.title("SVG Stroke Width Adjuster and Sketch Effect for PNG/JPG")
+st.write("Upload your image (SVG, PNG, JPG) and apply stroke width adjustment or sketch effect.")
 
 # Image Upload
 uploaded_file = st.file_uploader("Upload an image (PNG, JPG, SVG)", type=["png", "jpg", "jpeg", "svg"])
@@ -89,15 +88,11 @@ if uploaded_file is not None:
         # Read SVG content
         svg_data = uploaded_file.read().decode()
 
-        # Slider for adjusting stroke width and dash array for sketch-like effect
+        # Slider for adjusting stroke width (no dash array)
         new_stroke_width = st.slider("Adjust stroke width", 1, 10, 2)
-        dasharray = st.selectbox("Select dash pattern", options=["None", "5,5", "2,2", "10,5"])
-
-        if dasharray == "None":
-            dasharray = ""
 
         # Process the SVG by modifying stroke properties
-        modified_svg_data = process_svg_image(svg_data, new_stroke_width, dasharray)
+        modified_svg_data = process_svg_image(svg_data, new_stroke_width)
 
         # Display the modified SVG using st.write() and unsafe_allow_html
         st.write("### Preview of Modified SVG:")
@@ -107,6 +102,6 @@ if uploaded_file is not None:
         st.download_button(
             label="Download Modified SVG",
             data=modified_svg_data,
-            file_name="sketch_svg_image.svg",
+            file_name="modified_svg_image.svg",
             mime="image/svg+xml"
         )
