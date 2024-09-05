@@ -49,10 +49,10 @@ st.write("Upload your line art, adjust the line thickness, and ensure the final 
 
 # Initialize the session state
 if 'reset' not in st.session_state:
-    st.session_state['reset'] = False
+    st.session_state.reset = False
 
 # Reset the app if necessary
-if st.session_state['reset']:
+if st.session_state.reset:
     st.session_state.clear()
     st.rerun()
 
