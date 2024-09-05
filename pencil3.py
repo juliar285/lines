@@ -37,18 +37,24 @@ if uploaded_file is not None:
     inverted_blur = 255 - blurred
     pencil_sketch_image = cv2.divide(gray_image, inverted_blur, scale=256.0)
 
-    # Step 4: Set a fixed threshold for line detection
-    threshold_value = 244
+    # Step 4: Allow the user to adjust the threshold value
+    threshold_value = st.slider("Threshold Value for Line Detection", 100, 255, 244)
 
-    # Step 5: Convert to binary (black and white) image with fixed threshold
+    # Step 5: Convert to binary (black and white) image with adjustable threshold
     _, binary_image = cv2.threshold(pencil_sketch_image, threshold_value, 255, cv2.THRESH_BINARY)
 
-    # Step 6: Allow the user to adjust the contour area threshold
-    min_contour_area = st.slider("Minimum Contour Area for Noise Removal", 1, 200, 10)
+    # Optional: Add a toggle to apply or skip morphological operations
+    apply_morphology = st.checkbox("Apply Morphological Noise Removal", value=False)
 
-    # Step 7: Apply noise removal using Morphological Operations (smaller kernel)
-    kernel = np.ones((0, 0), np.uint8)  # A smaller kernel for softer noise removal
-    clean_image = cv2.morphologyEx(binary_image, cv2.MORPH_OPEN, kernel)
+    if apply_morphology:
+        # Step 6: Apply noise removal using Morphological Operations (small kernel)
+        kernel = np.ones((1, 1), np.uint8)  # A smaller kernel for less aggressive noise removal
+        clean_image = cv2.morphologyEx(binary_image, cv2.MORPH_OPEN, kernel)
+    else:
+        clean_image = binary_image
+
+    # Step 7: Allow the user to adjust the contour area threshold
+    min_contour_area = st.slider("Minimum Contour Area for Noise Removal", 1, 200, 10)
 
     # Step 8: Remove small contours based on the user-defined contour area threshold
     contours, _ = cv2.findContours(clean_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
