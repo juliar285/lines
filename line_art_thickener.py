@@ -42,11 +42,10 @@ def process_image(uploaded_image, thickness=0.5, upscale_factor=2):
 st.title("Line Art Thickener with 300 DPI Output")
 st.write("Upload your line art, adjust the line thickness, and ensure the final image is saved at 300 DPI!")
 
-# Function to reset the session state
-def reset_ui():
-    for key in st.session_state.keys():
-        del st.session_state[key]
-    st.experimental_rerun()  # Clear session state and restart the UI
+# Reset button - Clear session state
+if st.button("Reset"):
+    st.session_state.clear()  # Clear all session state variables
+    st.experimental_set_query_params()  # Refresh the URL to reset the page
 
 # Upload the image
 uploaded_image = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"])
@@ -80,6 +79,3 @@ if uploaded_image is not None:
             file_name="processed_image_300dpi.png",
             mime="image/png"
         )
-
-        # Reset the UI after download
-        reset_ui()
