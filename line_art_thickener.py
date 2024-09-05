@@ -47,4 +47,36 @@ st.write("Upload your line art, adjust the line thickness, and get a 300 DPI ima
 
 # Initialize session state for tracking download
 if "downloaded" not in st.session_state:
-    st.session_state.downl
+    st.session_state.downloaded = False
+
+# Upload the image
+uploaded_image = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"])
+
+if uploaded_image is not None:
+    # Slider to control line thickness with a default of 0.5 and a range from 0.01 to 1.0
+    thickness = st.slider("Select line thickness", 0.01, 1.0, 0.5, step=0.01)
+    
+    # Slider to control the upscaling factor for smoother processing, max value set to 6
+    upscale_factor = st.slider("Upscale factor (higher values reduce pixelation)", 1, 6, 2)
+
+    # Process the image
+    processed_image, original_image = process_image(uploaded_image, thickness, upscale_factor)
+    
+    # Show both images side by side for comparison
+    st.image([original_image, processed_image], caption=["Original Image", "Processed Image"], use_column_width=True)
+
+    # Option to accept the processed image
+    if st.button('Accept Processed Image'):
+        st.success("You have accepted the processed image!")
+        
+        # Provide download option with 300 DPI
+        buf = BytesIO()
+        processed_image_pil = Image.fromarray(cv2.cvtColor(processed_image, cv2.COLOR_BGR2RGB))
+        processed_image_pil.save(buf, format="PNG", dpi=(300, 300))  # Save at 300 DPI
+        st.download_button(label="Download Processed Image at 300 DPI", data=buf.getvalue(), file_name="processed_image_300dpi.png", mime="image/png")
+
+        # After downloading, trigger a rerun to reset the app
+        st.session_state.downloaded = True
+        st.experimental_rerun()  # Rerun the app to reset the state
+else:
+    st.warning("Please upload an image to proceed.")
