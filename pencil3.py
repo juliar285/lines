@@ -6,7 +6,7 @@ import numpy as np
 import cv2
 
 # Streamlit app layout
-st.title("SVG Pencil Sketch Conversion with Noise Removal")
+st.title("SVG Pencil Sketch Conversion with Advanced Noise Removal")
 
 # Image upload
 uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "png"])
@@ -43,26 +43,34 @@ if uploaded_file is not None:
     # Step 5: Convert to binary (black and white) image with fixed threshold
     _, binary_image = cv2.threshold(pencil_sketch_image, threshold_value, 255, cv2.THRESH_BINARY)
 
-    # Step 6: Apply more conservative noise removal using a smaller kernel
-    kernel = np.ones((1, 1), np.uint8)  # Smaller kernel for less aggressive removal
+    # Step 6: Apply noise removal using Morphological Operations
+    kernel = np.ones((2, 2), np.uint8)  # A slightly larger kernel for more aggressive noise removal
     clean_image = cv2.morphologyEx(binary_image, cv2.MORPH_OPEN, kernel)
 
-    # Skip contour filtering for now to retain more details
+    # Step 7: Apply Median Blur to remove small specks
+    clean_image = cv2.medianBlur(clean_image, 3)
+
+    # Step 8: Remove small contours to clean up noise
+    contours, _ = cv2.findContours(clean_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    final_clean_image = np.zeros_like(clean_image)  # Create an empty image to store the cleaned result
+    for contour in contours:
+        if cv2.contourArea(contour) > 20:  # Filter out very small areas
+            cv2.drawContours(final_clean_image, [contour], -1, 255, thickness=cv2.FILLED)
 
     # Convert the cleaned image back to PNG
-    sketch_pil_image = Image.fromarray(clean_image)
+    sketch_pil_image = Image.fromarray(final_clean_image)
     png_buffer = io.BytesIO()
     sketch_pil_image.save(png_buffer, format='PNG')
     png_data = png_buffer.getvalue()
 
-    # Step 7: Display the cleaned black-and-white pencil sketch (PNG)
+    # Step 9: Display the cleaned black-and-white pencil sketch (PNG)
     st.write("### Cleaned Pencil Sketch (Black and White PNG):")
-    st.image(clean_image, channels="GRAY", use_column_width=True)
+    st.image(final_clean_image, channels="GRAY", use_column_width=True)
 
     # Add a download button for the cleaned PNG version of the pencil sketch
     st.download_button(label="Download Cleaned Pencil Sketch (Black & White PNG)", data=png_data, file_name="cleaned_pencil_sketch_black_white.png", mime="image/png")
 
-    # Step 8: Convert the cleaned black-and-white PNG to SVG using vtracer
+    # Step 10: Convert the cleaned black-and-white PNG to SVG using vtracer
     svg_sketch_str = vtracer.convert_raw_image_to_svg(png_data, img_format='png')
 
     # Display the SVG output of the black-and-white pencil sketch using HTML embedding
