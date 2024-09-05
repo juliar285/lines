@@ -69,3 +69,4 @@ if uploaded_image is not None:
         st.download_button(label="Download Processed Image at 300 DPI", data=buf.getvalue(), file_name="processed_image_300dpi.png", mime="image/png")
     else:
         st.warning("You haven't accepted the processed image yet.")
+return (0)
