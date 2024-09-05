@@ -67,9 +67,6 @@ if uploaded_image is not None:
         processed_image_pil = Image.fromarray(cv2.cvtColor(processed_image, cv2.COLOR_BGR2RGB))
         processed_image_pil.save(buf, format="PNG", dpi=(300, 300))  # Save at 300 DPI
         st.download_button(label="Download Processed Image at 300 DPI", data=buf.getvalue(), file_name="processed_image_300dpi.png", mime="image/png")
-        counter = 1
-    else if counter == 1:
-        st.rerun()
     else:
         st.warning("You haven't accepted the processed image yet.")
 
