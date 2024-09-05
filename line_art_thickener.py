@@ -65,10 +65,38 @@ if uploaded_image is not None:
 
 # Only proceed if an image has been uploaded
 if st.session_state.uploaded_image:
-    # Get the file extension (for download format matching)
-    file_extension = os.path.splitext(uploaded_image.name)[1].lower()  # ".png" or ".jpg"
+    # Safely get the file extension
+    file_extension = os.path.splitext(st.session_state.uploaded_image.name)[1].lower()  # ".png" or ".jpg"
     download_format = "PNG" if file_extension == ".png" else "JPEG"
 
     # Slider to control line thickness with a default of 0.5 and a range from 0.01 to 1.0
     thickness = st.slider("Select line thickness", 0.01, 1.0, 0.5, step=0.01)
     
+    # Slider to control the upscaling factor for smoother processing, max value set to 6
+    upscale_factor = st.slider("Upscale factor (higher values reduce pixelation)", 1, 6, 2)
+
+    # Process the image and store the result in session state
+    processed_image, original_image = process_image(st.session_state.uploaded_image, thickness, upscale_factor)
+    st.session_state.processed_image = processed_image
+
+    # Show both images side by side for comparison
+    st.image([original_image, st.session_state.processed_image], caption=["Original Image", "Processed Image"], use_column_width=True)
+
+    # Prepare the processed image for download
+    buf = BytesIO()
+    processed_image_pil = Image.fromarray(cv2.cvtColor(st.session_state.processed_image, cv2.COLOR_BGR2RGB))
+    processed_image_pil.save(buf, format=download_format, dpi=(300, 300))  # Save as PNG or JPEG based on upload
+
+    # Download button
+    st.download_button(
+        label=f"Download Processed Image ({download_format})",
+        data=buf.getvalue(),
+        file_name=f"processed_image_300dpi{file_extension}",
+        mime=f"image/{download_format.lower()}"
+    )
+
+    # Reset button to clear session state and reset the UI
+    if st.button("Reset"):
+        reset_session()  # Clear session variables to reset the UI
+else:
+    st.warning("Please upload an image to proceed.")
