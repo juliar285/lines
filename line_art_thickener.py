@@ -6,6 +6,12 @@ from io import BytesIO
 import matplotlib.pyplot as plt
 import os
 
+import cv2
+import numpy as np
+import streamlit as st
+from PIL import Image
+from io import BytesIO
+
 # Function to process the image
 def process_image(uploaded_image, thickness=0.5, upscale_factor=2):
     # Convert the uploaded image to an OpenCV format
@@ -38,6 +44,10 @@ def process_image(uploaded_image, thickness=0.5, upscale_factor=2):
 
     return result_image, image  # Return the processed and original images
 
+# Initialize the session state flag
+if 'download_complete' not in st.session_state:
+    st.session_state['download_complete'] = False
+
 # Streamlit UI
 st.title("Line Art Thickener with 300 DPI Output")
 st.write("Upload your line art, adjust the line thickness, and ensure the final image is saved at 300 DPI!")
@@ -67,16 +77,17 @@ if uploaded_image is not None:
         processed_image_pil = Image.fromarray(cv2.cvtColor(processed_image, cv2.COLOR_BGR2RGB))
         processed_image_pil.save(buf, format="PNG", dpi=(300, 300))  # Save at 300 DPI
 
-        # Download button
-        download_button = st.download_button(
+        # Display download button
+        if st.download_button(
             label="Download Processed Image at 300 DPI",
             data=buf.getvalue(),
             file_name="processed_image_300dpi.png",
             mime="image/png"
-        )
+        ):
+            # Set the download complete flag to True after download
+            st.session_state['download_complete'] = True
 
-        # If the download button is clicked, reload the app
-        if download_button:
-            # Clear session state to reset the app
-            st.session_state.clear()
-            st.rerun()
+# Check if download is complete, then reset the app
+if st.session_state['download_complete']:
+    st.session_state.clear()
+    st.rerun()
