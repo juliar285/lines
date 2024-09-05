@@ -5,12 +5,6 @@ from PIL import Image
 from io import BytesIO
 import matplotlib.pyplot as plt
 
-import cv2
-import numpy as np
-import streamlit as st
-from PIL import Image
-from io import BytesIO
-
 # Function to process the image
 def process_image(uploaded_image, thickness=0.5, upscale_factor=2):
     # Convert the uploaded image to an OpenCV format
