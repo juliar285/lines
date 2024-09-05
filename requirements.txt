@@ -8,3 +8,4 @@ matplotlib
 torch
 torchvision
 vtracer
+cairosvg
