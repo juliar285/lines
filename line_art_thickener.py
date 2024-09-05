@@ -5,7 +5,6 @@ from PIL import Image
 from io import BytesIO
 import matplotlib.pyplot as plt
 import os
-
 import cv2
 import numpy as np
 import streamlit as st
@@ -44,13 +43,20 @@ def process_image(uploaded_image, thickness=0.5, upscale_factor=2):
 
     return result_image, image  # Return the processed and original images
 
+# Function to reset the session state
+def reset_session_state():
+    if 'uploaded_image' in st.session_state:
+        del st.session_state['uploaded_image']
+    if 'accepted_image' in st.session_state:
+        del st.session_state['accepted_image']
+
 # Streamlit UI
 st.title("Line Art Thickener with 300 DPI Output")
 st.write("Upload your line art, adjust the line thickness, and ensure the final image is saved at 300 DPI!")
 
-# Create a container to group the file uploader and sliders
+# Create a container for the file uploader and sliders
 with st.container() as uploader_container:
-    uploaded_image = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"])
+    uploaded_image = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"], key="uploaded_image")
 
     if uploaded_image is not None:
         # Slider to control line thickness
@@ -70,26 +76,27 @@ if uploaded_image is not None:
         st.image([original_image, processed_image], caption=["Original Image", "Processed Image"], use_column_width=True)
 
         # Option to accept the processed image
-        if st.button('Accept Processed Image'):
+        if st.button('Accept Processed Image', key="accept_button"):
+            st.session_state['accepted_image'] = processed_image  # Store the accepted image in session state
             st.success("You have accepted the processed image!")
 
             # Provide download option with 300 DPI
             buf = BytesIO()
-            processed_image_pil = Image.fromarray(cv2.cvtColor(processed_image, cv2.COLOR_BGR2RGB))
+            processed_image_pil = Image.fromarray(cv2.cvtColor(st.session_state['accepted_image'], cv2.COLOR_BGR2RGB))
             processed_image_pil.save(buf, format="PNG", dpi=(300, 300))  # Save at 300 DPI
 
             # Show the download button inside the container
-            if st.download_button(
+            download_clicked = st.download_button(
                 label="Download Processed Image at 300 DPI", 
                 data=buf.getvalue(), 
                 file_name="processed_image_300dpi.png", 
                 mime="image/png"
-            ):
-                st.success("Download complete!")
+            )
 
-                # After the download, clear both the uploader and image containers
-                uploader_container.empty()  # Clears the file uploader and sliders
-                display_container.empty()   # Clears the image and download button
-
+            # Clear the UI and reset session state after the download button is clicked
+            if download_clicked:
+                st.success("Download complete! Resetting the app...")
+                reset_session_state()  # Reset the session state to clear the file uploader and image data
+                st.experimental_rerun()  # Refresh the app after clearing the session state
 else:
     st.warning("Please upload an image to proceed.")
