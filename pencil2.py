@@ -4,10 +4,12 @@ from PIL import Image
 import streamlit as st
 import matplotlib.pyplot as plt
 
-# Load pre-trained Pix2Pix model
+# Load pre-trained Pix2Pix model from an alternative source
 @st.cache(allow_output_mutation=True)
 def load_model():
-    model = torch.hub.load('facebookresearch/pytorch_GAN_zoo:hub', 'pix2pixHD', pretrained=True)
+    # Load the model from an alternative repository
+    repo_or_dir = 'https://github.com/phillipi/pix2pix'
+    model = torch.hub.load(repo_or_dir, 'pix2pix', pretrained=True)
     model.eval()  # Set the model to evaluation mode
     return model
 
