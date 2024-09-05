@@ -73,7 +73,7 @@ if uploaded_image is not None:
 if 'count' not in st.session_state:
     st.session_state.count = 0
 
-increment = increment
+increment = st.download_button
 if increment:
     st.session_state.count += 1
 
