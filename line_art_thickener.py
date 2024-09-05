@@ -45,14 +45,19 @@ def process_image(uploaded_image, thickness=0.5, upscale_factor=2):
 st.title("Bold and Consistent Line Art")
 st.write("Upload your line art, adjust the line thickness, and get a 300 DPI image!")
 
-# Initialize session state for tracking download
+# Initialize session state for tracking the uploaded file and download
+if "uploaded_image" not in st.session_state:
+    st.session_state.uploaded_image = None
 if "downloaded" not in st.session_state:
     st.session_state.downloaded = False
 
 # Upload the image
-uploaded_image = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"])
+uploaded_image = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"], key="file_uploader")
 
 if uploaded_image is not None:
+    st.session_state.uploaded_image = uploaded_image  # Store the uploaded image in session state
+
+if st.session_state.uploaded_image:
     # Slider to control line thickness with a default of 0.5 and a range from 0.01 to 1.0
     thickness = st.slider("Select line thickness", 0.01, 1.0, 0.5, step=0.01)
     
@@ -60,7 +65,7 @@ if uploaded_image is not None:
     upscale_factor = st.slider("Upscale factor (higher values reduce pixelation)", 1, 6, 2)
 
     # Process the image
-    processed_image, original_image = process_image(uploaded_image, thickness, upscale_factor)
+    processed_image, original_image = process_image(st.session_state.uploaded_image, thickness, upscale_factor)
     
     # Show both images side by side for comparison
     st.image([original_image, processed_image], caption=["Original Image", "Processed Image"], use_column_width=True)
@@ -75,8 +80,9 @@ if uploaded_image is not None:
         processed_image_pil.save(buf, format="PNG", dpi=(300, 300))  # Save at 300 DPI
         st.download_button(label="Download Processed Image at 300 DPI", data=buf.getvalue(), file_name="processed_image_300dpi.png", mime="image/png")
 
-        # After downloading, trigger a rerun to reset the app
+        # After download, reset the uploader and sliders
+        st.session_state.uploaded_image = None
         st.session_state.downloaded = True
-        st.experimental_rerun()  # Rerun the app to reset the state
+        st.experimental_rerun()  # Simulate app rerun by clearing state
 else:
     st.warning("Please upload an image to proceed.")
