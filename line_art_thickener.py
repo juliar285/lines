@@ -7,16 +7,10 @@ import matplotlib.pyplot as plt
 import os
 
 # Function to process the image
-def process_image(file_bytes, thickness=0.5, upscale_factor=2):
-    # Convert the file bytes to an OpenCV format
-    image = cv2.imdecode(np.frombuffer(file_bytes, np.uint8), 1)
-
-    # If the image has an alpha channel (e.g., PNG), convert it to RGB
-    if image is None:
-        st.error("Error: Could not process the image.")
-        return None, None
-    if image.shape[2] == 4:  # Check for RGBA (PNG with transparency)
-        image = cv2.cvtColor(image, cv2.COLOR_BGRA2BGR)
+def process_image(uploaded_image, thickness=0.5, upscale_factor=2):
+    # Convert the uploaded image to an OpenCV format
+    file_bytes = np.asarray(bytearray(uploaded_image.read()), dtype=np.uint8)
+    image = cv2.imdecode(file_bytes, 1)
 
     # Upscale the image for smoother processing
     image_upscaled = cv2.resize(image, (0, 0), fx=upscale_factor, fy=upscale_factor, interpolation=cv2.INTER_CUBIC)
@@ -45,66 +39,47 @@ def process_image(file_bytes, thickness=0.5, upscale_factor=2):
     return result_image, image  # Return the processed and original images
 
 # Streamlit UI
-st.title("Bold and Consistent Line Art")
-st.write("Upload your line art, adjust the line thickness, and get a processed image!")
+st.title("Line Art Thickener with 300 DPI Output")
+st.write("Upload your line art, adjust the line thickness, and ensure the final image is saved at 300 DPI!")
 
-# Initialize session state for tracking the uploaded file and processed image
-if "uploaded_image" not in st.session_state:
-    st.session_state.uploaded_image = None
-if "processed_image" not in st.session_state:
-    st.session_state.processed_image = None
-if "file_bytes" not in st.session_state:
-    st.session_state.file_bytes = None
-
-# Reset the session state for the uploader and image
-def reset_session():
+# Function to reset the session state
+def reset_ui():
     for key in st.session_state.keys():
         del st.session_state[key]
+    st.experimental_rerun()  # Clear session state and restart the UI
 
-# File uploader
-uploaded_image = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"], key="file_uploader")
+# Upload the image
+uploaded_image = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"])
 
 if uploaded_image is not None:
-    st.session_state.uploaded_image = uploaded_image
-    st.session_state.file_bytes = uploaded_image.read()  # Store the file bytes
-
-# Only proceed if an image has been uploaded and file bytes are available
-if st.session_state.uploaded_image and st.session_state.file_bytes:
-    # Safely get the file extension
-    file_extension = os.path.splitext(st.session_state.uploaded_image.name)[1].lower()  # ".png" or ".jpg"
-    download_format = "PNG" if file_extension == ".png" else "JPEG"
-
     # Slider to control line thickness with a default of 0.5 and a range from 0.01 to 1.0
-    thickness = st.slider("Select line thickness", 0.01, 1.0, 0.5, step=0.01)
+    thickness = st.slider("Select line thickness", 0.5, 1.0, 0.5, step=0.01)
     
     # Slider to control the upscaling factor for smoother processing, max value set to 6
     upscale_factor = st.slider("Upscale factor (higher values reduce pixelation)", 1, 6, 2)
 
-    # Process the image using the stored file bytes
-    processed_image, original_image = process_image(st.session_state.file_bytes, thickness, upscale_factor)
+    # Process the image
+    processed_image, original_image = process_image(uploaded_image, thickness, upscale_factor)
     
-    if processed_image is not None:
-        st.session_state.processed_image = processed_image
+    # Show both images side by side for comparison
+    st.image([original_image, processed_image], caption=["Original Image", "Processed Image"], use_column_width=True)
 
-        # Show both images side by side for comparison
-        st.image([original_image, st.session_state.processed_image], caption=["Original Image", "Processed Image"], use_column_width=True)
-
-        # Prepare the processed image for download
+    # Option to accept the processed image
+    if st.button('Accept Processed Image'):
+        st.success("You have accepted the processed image!")
+        
+        # Provide download option with 300 DPI
         buf = BytesIO()
-        processed_image_pil = Image.fromarray(cv2.cvtColor(st.session_state.processed_image, cv2.COLOR_BGR2RGB))
-        processed_image_pil.save(buf, format=download_format, dpi=(300, 300))  # Save as PNG or JPEG based on upload
-
-        # Download button
+        processed_image_pil = Image.fromarray(cv2.cvtColor(processed_image, cv2.COLOR_BGR2RGB))
+        processed_image_pil.save(buf, format="PNG", dpi=(300, 300))  # Save at 300 DPI
+        
+        # Add download button
         st.download_button(
-            label=f"Download Processed Image ({download_format})",
+            label="Download Processed Image at 300 DPI",
             data=buf.getvalue(),
-            file_name=f"processed_image_300dpi{file_extension}",
-            mime=f"image/{download_format.lower()}"
+            file_name="processed_image_300dpi.png",
+            mime="image/png"
         )
 
-        # Reset button to clear session state and reset the UI
-        if st.button("Reset"):
-            reset_session()  # Clear session variables to reset the UI
-            st.experimental_set_query_params()  # Clear the query parameters
-else:
-    st.warning("Please upload an image to proceed.")
+        # Reset the UI after download
+        reset_ui()
