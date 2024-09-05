@@ -5,7 +5,6 @@ from PIL import Image
 from io import BytesIO
 import matplotlib.pyplot as plt
 import os
-
 import cv2
 import numpy as np
 import streamlit as st
@@ -44,7 +43,7 @@ def process_image(uploaded_image, thickness=0.5, upscale_factor=2):
 
     return result_image, image  # Return the processed and original images
 
-# Initialize the session state flag
+# Initialize session state to track download
 if 'download_complete' not in st.session_state:
     st.session_state['download_complete'] = False
 
@@ -77,17 +76,19 @@ if uploaded_image is not None:
         processed_image_pil = Image.fromarray(cv2.cvtColor(processed_image, cv2.COLOR_BGR2RGB))
         processed_image_pil.save(buf, format="PNG", dpi=(300, 300))  # Save at 300 DPI
 
-        # Display download button
-        if st.download_button(
+        # Show download button
+        download_clicked = st.download_button(
             label="Download Processed Image at 300 DPI",
             data=buf.getvalue(),
             file_name="processed_image_300dpi.png",
             mime="image/png"
-        ):
-            # Set the download complete flag to True after download
+        )
+
+        # After download, set flag to reload
+        if download_clicked:
             st.session_state['download_complete'] = True
 
-# Check if download is complete, then reset the app
+# Check if download is complete and trigger app reload
 if st.session_state['download_complete']:
-    st.session_state.clear()
-    st.rerun()
+    st.session_state.clear()  # Clear session state
+    st.experimental_rerun()   # Reload the app
