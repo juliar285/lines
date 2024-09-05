@@ -42,7 +42,7 @@ if uploaded_file is not None:
     threshold_value = st.slider("Threshold Value for Binary Conversion", 50, 255, 244)
 
     # Apply the final threshold to convert to black-and-white (binary)
-    _, binary_image = cv2.threshold(bilateral_filtered, threshold_value, 255, cv2.THRESH_BINARY)
+    _, binary_image = cv2.threshold(pencil_sketch_image, threshold_value, 255, cv2.THRESH_BINARY)
 
     # Step 6: Convert the final binary image to bytes for SVG conversion
     sketch_pil_image = Image.fromarray(binary_image)
