@@ -6,7 +6,7 @@ import numpy as np
 import cv2
 
 # Streamlit app layout
-st.title("SVG Pencil Sketch Conversion with Noise Reduction")
+st.title("SVG Pencil Sketch Conversion with Adaptive Noise Reduction")
 
 # Image upload
 uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "png"])
@@ -39,31 +39,28 @@ if uploaded_file is not None:
     inverted_blur = 255 - blurred
     pencil_sketch_image = cv2.divide(gray_image, inverted_blur, scale=256.0)
 
-    # Step 4: Apply Bilateral Filter for noise reduction while preserving edges
-    # Bilateral filter parameters: diameter, sigmaColor, sigmaSpace
-    bilateral_filtered = cv2.bilateralFilter(pencil_sketch_image, d=9, sigmaColor=75, sigmaSpace=75)
+    # Step 4: Apply a Bilateral Filter with reduced strength to preserve more details
+    bilateral_filtered = cv2.bilateralFilter(pencil_sketch_image, d=5, sigmaColor=50, sigmaSpace=50)
 
-    # Step 5: Apply Non-local Means Denoising
-    denoised_image = cv2.fastNlMeansDenoising(bilateral_filtered, None, h=10, templateWindowSize=7, searchWindowSize=21)
+    # Step 5: Apply Adaptive Thresholding to preserve details in different regions
+    adaptive_thresh_image = cv2.adaptiveThreshold(
+        bilateral_filtered, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2
+    )
 
-    # Step 6: Threshold the image to black-and-white (binary)
-    threshold_value = 244
-    _, binary_image = cv2.threshold(denoised_image, threshold_value, 255, cv2.THRESH_BINARY)
-
-    # Convert the binary image back to PNG
-    sketch_pil_image = Image.fromarray(binary_image)
+    # Convert the adaptive threshold image back to PNG
+    sketch_pil_image = Image.fromarray(adaptive_thresh_image)
     png_buffer = io.BytesIO()
     sketch_pil_image.save(png_buffer, format='PNG')
     png_data = png_buffer.getvalue()
 
-    # Step 7: Display the cleaned black-and-white pencil sketch (PNG)
-    st.write("### Pencil Sketch (Black and White PNG) with Noise Reduction:")
-    st.image(binary_image, channels="GRAY", use_column_width=True)
+    # Step 6: Display the adaptive threshold pencil sketch (PNG)
+    st.write("### Pencil Sketch (Black and White PNG) with Adaptive Noise Reduction:")
+    st.image(adaptive_thresh_image, channels="GRAY", use_column_width=True)
 
-    # Add a download button for the cleaned PNG version of the pencil sketch
+    # Add a download button for the adaptive threshold PNG version of the pencil sketch
     st.download_button(label="Download Pencil Sketch (Black & White PNG)", data=png_data, file_name="pencil_sketch_black_white.png", mime="image/png")
 
-    # Step 8: Convert the black-and-white PNG to SVG using vtracer
+    # Step 7: Convert the black-and-white PNG to SVG using vtracer
     svg_sketch_str = vtracer.convert_raw_image_to_svg(png_data, img_format='png')
 
     # Display the SVG output of the black-and-white pencil sketch using HTML embedding
