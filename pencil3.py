@@ -6,7 +6,7 @@ import numpy as np
 import cv2
 
 # Streamlit app layout
-st.title("SVG Pencil Sketch Conversion with Adaptive Noise Reduction")
+st.title("SVG Pencil Sketch Conversion with Adjustable Threshold and Noise Reduction")
 
 # Image upload
 uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "png"])
@@ -47,20 +47,26 @@ if uploaded_file is not None:
         bilateral_filtered, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2
     )
 
-    # Convert the adaptive threshold image back to PNG
-    sketch_pil_image = Image.fromarray(adaptive_thresh_image)
+    # Step 6: Add a threshold slider for fine-tuning after adaptive thresholding
+    threshold_value = st.slider("Final Threshold Value for Binary Conversion", 50, 255, 244)
+
+    # Apply the final threshold to convert to black-and-white
+    _, binary_image = cv2.threshold(adaptive_thresh_image, threshold_value, 255, cv2.THRESH_BINARY)
+
+    # Convert the final binary image back to PNG
+    sketch_pil_image = Image.fromarray(binary_image)
     png_buffer = io.BytesIO()
     sketch_pil_image.save(png_buffer, format='PNG')
     png_data = png_buffer.getvalue()
 
-    # Step 6: Display the adaptive threshold pencil sketch (PNG)
-    st.write("### Pencil Sketch (Black and White PNG) with Adaptive Noise Reduction:")
-    st.image(adaptive_thresh_image, channels="GRAY", use_column_width=True)
+    # Step 7: Display the final pencil sketch (PNG) with noise reduction and adjustable threshold
+    st.write("### Pencil Sketch (Black and White PNG) with Adjustable Threshold:")
+    st.image(binary_image, channels="GRAY", use_column_width=True)
 
-    # Add a download button for the adaptive threshold PNG version of the pencil sketch
+    # Add a download button for the final PNG version of the pencil sketch
     st.download_button(label="Download Pencil Sketch (Black & White PNG)", data=png_data, file_name="pencil_sketch_black_white.png", mime="image/png")
 
-    # Step 7: Convert the black-and-white PNG to SVG using vtracer
+    # Step 8: Convert the black-and-white PNG to SVG using vtracer
     svg_sketch_str = vtracer.convert_raw_image_to_svg(png_data, img_format='png')
 
     # Display the SVG output of the black-and-white pencil sketch using HTML embedding
