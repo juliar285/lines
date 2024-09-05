@@ -38,7 +38,7 @@ if uploaded_file is not None:
     pencil_sketch_image = cv2.divide(gray_image, inverted_blur, scale=256.0)
 
     # Step 4: Allow the user to adjust the threshold value
-    threshold_value = st.slider("Threshold Value for Line Detection", 100, 255, 244)
+    threshold_value = st.slider("Threshold Value for Line Detection", 244, 500, 244)
 
     # Step 5: Convert to binary (black and white) image with adjustable threshold
     _, binary_image = cv2.threshold(pencil_sketch_image, threshold_value, 255, cv2.THRESH_BINARY)
