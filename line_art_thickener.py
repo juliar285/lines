@@ -45,10 +45,25 @@ def process_image(uploaded_image, thickness=0.5, upscale_factor=2):
 st.title("Bold and Consistent Line Art")
 st.write("Upload your line art, adjust the line thickness, and get a 300 DPI image!")
 
-# Upload the image
-uploaded_image = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"], key="file_uploader")
+# Initialize session state for tracking the uploaded file and download
+if "uploaded_image" not in st.session_state:
+    st.session_state.uploaded_image = None
+if "downloaded" not in st.session_state:
+    st.session_state.downloaded = False
+
+# Function to reset session state
+def reset_session():
+    st.session_state.uploaded_image = None
+    st.session_state.downloaded = False
+
+# File uploader
+uploaded_image = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"])
 
 if uploaded_image is not None:
+    st.session_state.uploaded_image = uploaded_image  # Store the uploaded image in session state
+
+# Only proceed if an image has been uploaded
+if st.session_state.uploaded_image:
     # Slider to control line thickness with a default of 0.5 and a range from 0.01 to 1.0
     thickness = st.slider("Select line thickness", 0.01, 1.0, 0.5, step=0.01)
     
@@ -56,7 +71,7 @@ if uploaded_image is not None:
     upscale_factor = st.slider("Upscale factor (higher values reduce pixelation)", 1, 6, 2)
 
     # Process the image
-    processed_image, original_image = process_image(uploaded_image, thickness, upscale_factor)
+    processed_image, original_image = process_image(st.session_state.uploaded_image, thickness, upscale_factor)
     
     # Show both images side by side for comparison
     st.image([original_image, processed_image], caption=["Original Image", "Processed Image"], use_column_width=True)
@@ -71,8 +86,8 @@ if uploaded_image is not None:
         processed_image_pil.save(buf, format="PNG", dpi=(300, 300))  # Save at 300 DPI
         st.download_button(label="Download Processed Image at 300 DPI", data=buf.getvalue(), file_name="processed_image_300dpi.png", mime="image/png")
 
-        # Force the app to reload (reset)
-        st.experimental_set_query_params()  # This will reset the app
-
+        # Reset session state and clear the uploader after download
+        reset_session()  # This will clear the file uploader and reset the UI elements
+        st.experimental_set_query_params()  # Trigger a refresh by setting query parameters
 else:
     st.warning("Please upload an image to proceed.")
