@@ -42,8 +42,10 @@ def process_image(uploaded_image, thickness=0.5, upscale_factor=2):
 st.title("Line Art Thickener with 300 DPI Output")
 st.write("Upload your line art, adjust the line thickness, and ensure the final image is saved at 300 DPI!")
 
-# Create an empty placeholder for the file uploader
+# Create placeholders for the file uploader and images
 uploader_placeholder = st.empty()
+image_placeholder = st.empty()
+download_placeholder = st.empty()
 
 # Upload the image using the placeholder
 uploaded_image = uploader_placeholder.file_uploader("Upload an image", type=["png", "jpg", "jpeg"])
@@ -59,7 +61,7 @@ if uploaded_image is not None:
     processed_image, original_image = process_image(uploaded_image, thickness, upscale_factor)
     
     # Show both images side by side for comparison
-    st.image([original_image, processed_image], caption=["Original Image", "Processed Image"], use_column_width=True)
+    image_placeholder.image([original_image, processed_image], caption=["Original Image", "Processed Image"], use_column_width=True)
 
     # Option to accept the processed image
     if st.button('Accept Processed Image'):
@@ -70,10 +72,18 @@ if uploaded_image is not None:
         processed_image_pil = Image.fromarray(cv2.cvtColor(processed_image, cv2.COLOR_BGR2RGB))
         processed_image_pil.save(buf, format="PNG", dpi=(300, 300))  # Save at 300 DPI
         
-        # Add download button
-        st.download_button(label="Download Processed Image at 300 DPI", data=buf.getvalue(), file_name="processed_image_300dpi.png", mime="image/png")
+        # Download button
+        download_placeholder.download_button(
+            label="Download Processed Image at 300 DPI", 
+            data=buf.getvalue(), 
+            file_name="processed_image_300dpi.png", 
+            mime="image/png"
+        )
 
-        # After the download, clear the file uploader to reset the UI
-        uploader_placeholder.empty()  # Clears the uploader and resets the app
+        # After the download, clear the file uploader, images, and download button
+        uploader_placeholder.empty()
+        image_placeholder.empty()
+        download_placeholder.empty()
+
 else:
     st.warning("Please upload an image to proceed.")
