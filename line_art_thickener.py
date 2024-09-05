@@ -54,7 +54,7 @@ if 'reset' not in st.session_state:
 # Reset the app if necessary
 if st.session_state['reset']:
     st.session_state.clear()
-    st.experimental_rerun()
+    st.rerun()
 
 # Upload the image
 uploaded_image = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"])
