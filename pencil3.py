@@ -39,19 +39,19 @@ if uploaded_file is not None:
 
     # Convert the pencil sketch image back to PNG
     sketch_pil_image = Image.fromarray(pencil_sketch_image)
-    img_byte_array = io.BytesIO()
-    sketch_pil_image.save(img_byte_array, format='PNG')
-    img_bytes = img_byte_array.getvalue()
+    png_buffer = io.BytesIO()
+    sketch_pil_image.save(png_buffer, format='PNG')
+    png_data = png_buffer.getvalue()
 
     # Step 4: Display the PNG version of the pencil sketch
     st.write("### Pencil Sketch (PNG):")
     st.image(pencil_sketch_image, channels="GRAY", use_column_width=True)
 
     # Add a download button for the PNG version of the pencil sketch
-    st.download_button(label="Download Pencil Sketch (PNG)", data=img_bytes, file_name="pencil_sketch.png", mime="image/png")
+    st.download_button(label="Download Pencil Sketch (PNG)", data=png_data, file_name="pencil_sketch.png", mime="image/png")
 
     # Step 5: Convert the pencil sketch (PNG) to SVG using vtracer
-    svg_sketch_str = vtracer.convert_raw_image_to_svg(img_bytes, img_format='png')
+    svg_sketch_str = vtracer.convert_raw_image_to_svg(png_data, img_format='png')
 
     # Display the SVG output of the pencil sketch using HTML embedding
     st.write("### Pencil Sketch SVG:")
