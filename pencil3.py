@@ -33,19 +33,20 @@ if uploaded_file is not None:
     color_precision = st.sidebar.slider("Color Precision", 1, 10, 6)
     layer_difference = st.sidebar.slider("Layer Difference", 1, 50, 16)
 
-    # Apply conversion to SVG using vtracer
-    svg_str = vtracer.convert_image_to_svg_py(
+    # Step 3: Use vtracer to convert the image bytes to SVG
+    # Convert the image bytes into SVG string using vtracer
+    svg_str = vtracer.convert_raw_image_to_svg(
         img_bytes, 
-        None,  # Output path not needed since we work with strings
+        img_format='png',  # Format is PNG as the input image is treated as PNG
         colormode=colormode, 
         path_precision=path_precision, 
         color_precision=color_precision, 
         layer_difference=layer_difference
     )
 
-    # Step 3: Display the SVG output
+    # Step 4: Display the SVG output
     st.write("### Converted SVG:")
     st.write(f'<div>{svg_str}</div>', unsafe_allow_html=True)
 
-    # Step 4: Provide a download button for the SVG result
+    # Step 5: Provide a download button for the SVG result
     st.download_button(label="Download SVG", data=svg_str, file_name="converted_image.svg", mime="image/svg+xml")
