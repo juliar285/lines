@@ -71,4 +71,4 @@ if uploaded_image is not None:
     else:
         st.warning("You haven't accepted the processed image yet.")
 
-st.self = 0
+st.self = None
