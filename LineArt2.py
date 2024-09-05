@@ -4,7 +4,6 @@ import streamlit as st
 from PIL import Image
 from io import BytesIO
 import xml.etree.ElementTree as ET  # To handle SVG processing
-import streamlit.components.v1 as components  # For HTML embedding
 
 # Function to apply sketch effect for pixel-based images
 def apply_sketch_effect(image):
@@ -100,16 +99,9 @@ if uploaded_file is not None:
         # Process the SVG by modifying stroke properties
         modified_svg_data = process_svg_image(svg_data, new_stroke_width, dasharray)
 
-        # Create an HTML structure to embed the SVG
-        svg_html = f"""
-        <div style="border: 1px solid black;">
-            {modified_svg_data}
-        </div>
-        """
-
-        # Display the modified SVG in the browser using Streamlit's HTML component
+        # Display the modified SVG using st.write() and unsafe_allow_html
         st.write("### Preview of Modified SVG:")
-        components.html(svg_html, height=400)
+        st.write(f'<div>{modified_svg_data}</div>', unsafe_allow_html=True)
 
         # Download the modified SVG
         st.download_button(
