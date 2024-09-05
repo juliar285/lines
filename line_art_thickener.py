@@ -4,7 +4,7 @@ import streamlit as st
 from PIL import Image
 from io import BytesIO
 import matplotlib.pyplot as plt
-import os
+
 import cv2
 import numpy as np
 import streamlit as st
@@ -43,52 +43,55 @@ def process_image(uploaded_image, thickness=0.5, upscale_factor=2):
 
     return result_image, image  # Return the processed and original images
 
-# Initialize session state to track download
-if 'download_complete' not in st.session_state:
-    st.session_state['download_complete'] = False
-
 # Streamlit UI
 st.title("Line Art Thickener with 300 DPI Output")
 st.write("Upload your line art, adjust the line thickness, and ensure the final image is saved at 300 DPI!")
 
-# Upload the image
-uploaded_image = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"])
+# Initialize the session state
+if 'reset' not in st.session_state:
+    st.session_state['reset'] = False
 
-if uploaded_image is not None:
-    # Slider to control line thickness with a default of 0.5 and a range from 0.01 to 1.0
-    thickness = st.slider("Select line thickness", 0.5, 1.0, 0.5, step=0.01)
+# Create a container to manage the file uploader and controls
+with st.container() as app_container:
     
-    # Slider to control the upscaling factor for smoother processing, max value set to 6
-    upscale_factor = st.slider("Upscale factor (higher values reduce pixelation)", 1, 6, 2)
-
-    # Process the image
-    processed_image, original_image = process_image(uploaded_image, thickness, upscale_factor)
+    # Reset the app if the reset flag is true
+    if st.session_state['reset']:
+        st.session_state.clear()  # Clear the session state
+        st.rerun()   # Reload the app to its initial state
     
-    # Show both images side by side for comparison
-    st.image([original_image, processed_image], caption=["Original Image", "Processed Image"], use_column_width=True)
+    # File uploader
+    uploaded_image = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"])
 
-    # Option to accept the processed image
-    if st.button('Accept Processed Image'):
-        st.success("You have accepted the processed image!")
+    if uploaded_image is not None:
+        # Slider to control line thickness
+        thickness = st.slider("Select line thickness", 0.5, 1.0, 0.5, step=0.01)
         
-        # Provide download option with 300 DPI
-        buf = BytesIO()
-        processed_image_pil = Image.fromarray(cv2.cvtColor(processed_image, cv2.COLOR_BGR2RGB))
-        processed_image_pil.save(buf, format="PNG", dpi=(300, 300))  # Save at 300 DPI
+        # Slider to control the upscaling factor for smoother processing
+        upscale_factor = st.slider("Upscale factor (higher values reduce pixelation)", 1, 6, 2)
 
-        # Show download button
-        download_clicked = st.download_button(
-            label="Download Processed Image at 300 DPI",
-            data=buf.getvalue(),
-            file_name="processed_image_300dpi.png",
-            mime="image/png"
-        )
+        # Process the image
+        processed_image, original_image = process_image(uploaded_image, thickness, upscale_factor)
+        
+        # Show both images side by side for comparison
+        st.image([original_image, processed_image], caption=["Original Image", "Processed Image"], use_column_width=True)
 
-        # After download, set flag to reload
-        if download_clicked:
-            st.session_state['download_complete'] = True
+        # Option to accept the processed image
+        if st.button('Accept Processed Image'):
+            st.success("You have accepted the processed image!")
+            
+            # Provide download option with 300 DPI
+            buf = BytesIO()
+            processed_image_pil = Image.fromarray(cv2.cvtColor(processed_image, cv2.COLOR_BGR2RGB))
+            processed_image_pil.save(buf, format="PNG", dpi=(300, 300))  # Save at 300 DPI
 
-# Check if download is complete and trigger app reload
-if st.session_state['download_complete']:
-    st.session_state.clear()  # Clear session state
-    st.experimental_rerun()   # Reload the app
+            # Show download button
+            download_clicked = st.download_button(
+                label="Download Processed Image at 300 DPI",
+                data=buf.getvalue(),
+                file_name="processed_image_300dpi.png",
+                mime="image/png"
+            )
+
+            # After download, trigger reset
+            if download_clicked:
+                st.session_state['reset'] = True  # Set reset flag to true
