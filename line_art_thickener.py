@@ -7,12 +7,14 @@ import matplotlib.pyplot as plt
 import os
 
 # Function to process the image
-def process_image(uploaded_image, thickness=0.5, upscale_factor=2):
-    # Convert the uploaded image to an OpenCV format
-    file_bytes = np.asarray(bytearray(uploaded_image.read()), dtype=np.uint8)
-    image = cv2.imdecode(file_bytes, 1)
+def process_image(file_bytes, thickness=0.5, upscale_factor=2):
+    # Convert the file bytes to an OpenCV format
+    image = cv2.imdecode(np.frombuffer(file_bytes, np.uint8), 1)
 
     # If the image has an alpha channel (e.g., PNG), convert it to RGB
+    if image is None:
+        st.error("Error: Could not process the image.")
+        return None, None
     if image.shape[2] == 4:  # Check for RGBA (PNG with transparency)
         image = cv2.cvtColor(image, cv2.COLOR_BGRA2BGR)
 
@@ -51,20 +53,24 @@ if "uploaded_image" not in st.session_state:
     st.session_state.uploaded_image = None
 if "processed_image" not in st.session_state:
     st.session_state.processed_image = None
+if "file_bytes" not in st.session_state:
+    st.session_state.file_bytes = None
 
 # Reset the session state for the uploader and image
 def reset_session():
     st.session_state.uploaded_image = None
     st.session_state.processed_image = None
+    st.session_state.file_bytes = None
 
 # File uploader
 uploaded_image = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"], key="file_uploader")
 
 if uploaded_image is not None:
-    st.session_state.uploaded_image = uploaded_image  # Store the uploaded image in session state
+    st.session_state.uploaded_image = uploaded_image
+    st.session_state.file_bytes = uploaded_image.read()  # Store the file bytes
 
-# Only proceed if an image has been uploaded
-if st.session_state.uploaded_image:
+# Only proceed if an image has been uploaded and file bytes are available
+if st.session_state.uploaded_image and st.session_state.file_bytes:
     # Safely get the file extension
     file_extension = os.path.splitext(st.session_state.uploaded_image.name)[1].lower()  # ".png" or ".jpg"
     download_format = "PNG" if file_extension == ".png" else "JPEG"
@@ -75,28 +81,30 @@ if st.session_state.uploaded_image:
     # Slider to control the upscaling factor for smoother processing, max value set to 6
     upscale_factor = st.slider("Upscale factor (higher values reduce pixelation)", 1, 6, 2)
 
-    # Process the image and store the result in session state
-    processed_image, original_image = process_image(st.session_state.uploaded_image, thickness, upscale_factor)
-    st.session_state.processed_image = processed_image
+    # Process the image using the stored file bytes
+    processed_image, original_image = process_image(st.session_state.file_bytes, thickness, upscale_factor)
+    
+    if processed_image is not None:
+        st.session_state.processed_image = processed_image
 
-    # Show both images side by side for comparison
-    st.image([original_image, st.session_state.processed_image], caption=["Original Image", "Processed Image"], use_column_width=True)
+        # Show both images side by side for comparison
+        st.image([original_image, st.session_state.processed_image], caption=["Original Image", "Processed Image"], use_column_width=True)
 
-    # Prepare the processed image for download
-    buf = BytesIO()
-    processed_image_pil = Image.fromarray(cv2.cvtColor(st.session_state.processed_image, cv2.COLOR_BGR2RGB))
-    processed_image_pil.save(buf, format=download_format, dpi=(300, 300))  # Save as PNG or JPEG based on upload
+        # Prepare the processed image for download
+        buf = BytesIO()
+        processed_image_pil = Image.fromarray(cv2.cvtColor(st.session_state.processed_image, cv2.COLOR_BGR2RGB))
+        processed_image_pil.save(buf, format=download_format, dpi=(300, 300))  # Save as PNG or JPEG based on upload
 
-    # Download button
-    st.download_button(
-        label=f"Download Processed Image ({download_format})",
-        data=buf.getvalue(),
-        file_name=f"processed_image_300dpi{file_extension}",
-        mime=f"image/{download_format.lower()}"
-    )
+        # Download button
+        st.download_button(
+            label=f"Download Processed Image ({download_format})",
+            data=buf.getvalue(),
+            file_name=f"processed_image_300dpi{file_extension}",
+            mime=f"image/{download_format.lower()}"
+        )
 
-    # Reset button to clear session state and reset the UI
-    if st.button("Reset"):
-        reset_session()  # Clear session variables to reset the UI
+        # Reset button to clear session state and reset the UI
+        if st.button("Reset"):
+            reset_session()  # Clear session variables to reset the UI
 else:
     st.warning("Please upload an image to proceed.")
