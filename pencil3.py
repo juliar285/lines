@@ -37,25 +37,28 @@ if uploaded_file is not None:
     inverted_blur = 255 - blurred
     pencil_sketch_image = cv2.divide(gray_image, inverted_blur, scale=256.0)
 
-    # Convert the pencil sketch image back to PNG
-    sketch_pil_image = Image.fromarray(pencil_sketch_image)
+    # Step 4: Convert to binary (black and white) image
+    _, binary_image = cv2.threshold(pencil_sketch_image, 128, 255, cv2.THRESH_BINARY)
+
+    # Convert the binary image back to PNG
+    sketch_pil_image = Image.fromarray(binary_image)
     png_buffer = io.BytesIO()
     sketch_pil_image.save(png_buffer, format='PNG')
     png_data = png_buffer.getvalue()
 
-    # Step 4: Display the PNG version of the pencil sketch
-    st.write("### Pencil Sketch (PNG):")
-    st.image(pencil_sketch_image, channels="GRAY", use_column_width=True)
+    # Step 5: Display the black-and-white pencil sketch (PNG)
+    st.write("### Pencil Sketch (Black and White PNG):")
+    st.image(binary_image, channels="GRAY", use_column_width=True)
 
-    # Add a download button for the PNG version of the pencil sketch
-    st.download_button(label="Download Pencil Sketch (PNG)", data=png_data, file_name="pencil_sketch.png", mime="image/png")
+    # Add a download button for the binary (black and white) PNG version of the pencil sketch
+    st.download_button(label="Download Pencil Sketch (Black & White PNG)", data=png_data, file_name="pencil_sketch_black_white.png", mime="image/png")
 
-    # Step 5: Convert the pencil sketch (PNG) to SVG using vtracer
+    # Step 6: Convert the black-and-white PNG to SVG using vtracer
     svg_sketch_str = vtracer.convert_raw_image_to_svg(png_data, img_format='png')
 
-    # Display the SVG output of the pencil sketch using HTML embedding
+    # Display the SVG output of the black-and-white pencil sketch using HTML embedding
     st.write("### Pencil Sketch SVG:")
     st.write(f'<div>{svg_sketch_str}</div>', unsafe_allow_html=True)
 
-    # Provide a download option for the pencil sketch SVG
-    st.download_button(label="Download Pencil Sketch (SVG)", data=svg_sketch_str, file_name="pencil_sketch.svg", mime="image/svg+xml")
+    # Provide a download option for the black-and-white pencil sketch SVG
+    st.download_button(label="Download Pencil Sketch (Black & White SVG)", data=svg_sketch_str, file_name="pencil_sketch_black_white.svg", mime="image/svg+xml")
