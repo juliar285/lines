@@ -11,6 +11,10 @@ def process_image(uploaded_image, thickness=0.5, upscale_factor=2):
     file_bytes = np.asarray(bytearray(uploaded_image.read()), dtype=np.uint8)
     image = cv2.imdecode(file_bytes, 1)
 
+    # If the image has an alpha channel (e.g., PNG), convert it to RGB
+    if image.shape[2] == 4:  # Check for RGBA (PNG with transparency)
+        image = cv2.cvtColor(image, cv2.COLOR_BGRA2BGR)
+
     # Upscale the image for smoother processing
     image_upscaled = cv2.resize(image, (0, 0), fx=upscale_factor, fy=upscale_factor, interpolation=cv2.INTER_CUBIC)
 
@@ -41,28 +45,24 @@ def process_image(uploaded_image, thickness=0.5, upscale_factor=2):
 def reset_app():
     st.session_state.clear()
 
-# Streamlit UI
-st.title("Bold and Consistent Line Art")
-st.write("Use this tool if you would like to modify existing line art to have thicker lines.  There are options to increase line thickness and upscaling factors")
-st.write("Complex Images may need adjustments using the sliders, simplier pictures will require less adjustments.  Good ratios are:  .5 Line Thickness and Level 4 Upscale factor")
-st.write("Ro use this tool do the following: 1. Upload your line art, 2. adjust the line thickness. 3. Accept if you approve of the image (if not then make more adjustments), 4. After Acceptance the application will prepare your image in 300 DPI format and give you a link to download.  will  and ensure the final image is saved at 300 DPI!")
-
-
-
-# Initialize session state for reset
+# Initialize session state
 if "downloaded" not in st.session_state:
     st.session_state.downloaded = False
 
-# If the image has been downloaded, reset the app
+# Reset the app if image has been downloaded
 if st.session_state.downloaded:
     reset_app()
+
+# Streamlit UI
+st.title("Bold and Consistent Line Art")
+st.write("Upload your line art, adjust the line thickness, and get a 300 DPI image!")
 
 # Upload the image
 uploaded_image = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"])
 
 if uploaded_image is not None:
     # Slider to control line thickness with a default of 0.5 and a range from 0.01 to 1.0
-    thickness = st.slider("Select line thickness", 0.5, 1.0, 0.5, step=0.01)
+    thickness = st.slider("Select line thickness", 0.01, 1.0, 0.5, step=0.01)
     
     # Slider to control the upscaling factor for smoother processing, max value set to 6
     upscale_factor = st.slider("Upscale factor (higher values reduce pixelation)", 1, 6, 2)
@@ -83,7 +83,7 @@ if uploaded_image is not None:
         processed_image_pil.save(buf, format="PNG", dpi=(300, 300))  # Save at 300 DPI
         st.download_button(label="Download Processed Image at 300 DPI", data=buf.getvalue(), file_name="processed_image_300dpi.png", mime="image/png")
         
-        # Set the session state to trigger reset
+        # Trigger reset after download
         st.session_state.downloaded = True
 else:
-    st.warning("You haven't uploaded an image yet.")
+    st.warning("Please upload an image to proceed.")
