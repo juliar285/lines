@@ -38,7 +38,7 @@ if uploaded_file is not None:
     pencil_sketch_image = cv2.divide(gray_image, inverted_blur, scale=256.0)
 
     # Step 4: Allow user to adjust threshold value
-    threshold_value = st.slider("Select Threshold Value", min_value=50, max_value=200, value=100, step=1)
+    threshold_value = st.slider("Select Threshold Value", min_value=200, max_value=255, value=100, step=1)
 
     # Step 5: Convert to binary (black and white) image with adjustable threshold
     _, binary_image = cv2.threshold(pencil_sketch_image, threshold_value, 255, cv2.THRESH_BINARY)
