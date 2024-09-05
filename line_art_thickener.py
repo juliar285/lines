@@ -21,7 +21,7 @@ def process_image(uploaded_image, thickness=0.5, upscale_factor=2):
     edges = cv2.Canny(gray_image, 50, 150, apertureSize=3)
 
     # Apply dilation to thicken the edges based on the slider value
-    kernel_size = int(thickness * 10)  # Directly scale the kernel size for visible changes
+    kernel_size = int(thickness * 10)
     kernel = np.ones((kernel_size, kernel_size), np.uint8)
     thickened_edges = cv2.dilate(edges, kernel, iterations=1)
 
@@ -41,27 +41,40 @@ def process_image(uploaded_image, thickness=0.5, upscale_factor=2):
 st.title("Line Art Thickener with 300 DPI Output")
 st.write("Upload your line art, adjust the line thickness, and ensure the final image is saved at 300 DPI!")
 
-# Initialize the session state
+# Initialize session state for unique keys and reset
+if 'upload_key' not in st.session_state:
+    st.session_state.upload_key = 0
 if 'reset' not in st.session_state:
     st.session_state.reset = False
+if 'uploaded_image' not in st.session_state:
+    st.session_state.uploaded_image = None
 
-# Reset the app if necessary
+# Reset logic
 if st.session_state.reset:
-    st.session_state.clear()
-    st.rerun()
+    st.session_state.reset = False
+    st.session_state.upload_key += 1  # Increment key to create a new uploader instance
+    st.session_state.uploaded_image = None  # Clear the uploaded image state
 
-# Upload the image
-uploaded_image = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"])
+# Upload the image with a unique key
+uploaded_image = st.file_uploader(
+    "Upload an image", 
+    type=["png", "jpg", "jpeg"], 
+    key=f"file_uploader_{st.session_state.upload_key}"
+)
 
+# Store the uploaded image in session state for processing
 if uploaded_image is not None:
-    # Slider to control line thickness with a default of 0.5 and a range from 0.01 to 1.0
+    st.session_state.uploaded_image = uploaded_image
+
+if st.session_state.uploaded_image is not None:
+    # Slider to control line thickness
     thickness = st.slider("Select line thickness", 0.5, 1.0, 0.5, step=0.01)
     
-    # Slider to control the upscaling factor for smoother processing, max value set to 6
+    # Slider to control the upscaling factor
     upscale_factor = st.slider("Upscale factor (higher values reduce pixelation)", 1, 6, 2)
 
     # Process the image
-    processed_image, original_image = process_image(uploaded_image, thickness, upscale_factor)
+    processed_image, original_image = process_image(st.session_state.uploaded_image, thickness, upscale_factor)
     
     # Show both images side by side for comparison
     st.image([original_image, processed_image], caption=["Original Image", "Processed Image"], use_column_width=True)
@@ -69,6 +82,7 @@ if uploaded_image is not None:
     # Option to accept the processed image
     if st.button('Accept Processed Image'):
         st.success("You have accepted the processed image!")
+        st.session_state.reset = True
         
         # Provide download option with 300 DPI
         buf = BytesIO()
@@ -85,5 +99,5 @@ if uploaded_image is not None:
 
         # After download, trigger reset
         if download_clicked:
-            st.file_uploader.empty()
             st.session_state.reset = True  # Set reset flag to true
+            st.rerun()  # Trigger a rerun to reset the state
