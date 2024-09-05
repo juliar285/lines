@@ -80,9 +80,11 @@ if st.session_state.uploaded_image:
         processed_image_pil.save(buf, format="PNG", dpi=(300, 300))  # Save at 300 DPI
         st.download_button(label="Download Processed Image at 300 DPI", data=buf.getvalue(), file_name="processed_image_300dpi.png", mime="image/png")
 
-        # After download, reset the uploader and sliders
+        # Reset session state to clear file uploader and other inputs
         st.session_state.uploaded_image = None
         st.session_state.downloaded = True
-        st.experimental_rerun()  # Simulate app rerun by clearing state
+
+        # Manually clear file uploader by reloading the page or resetting states
+        st.experimental_set_query_params()
 else:
     st.warning("Please upload an image to proceed.")
