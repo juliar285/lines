@@ -51,8 +51,13 @@ if "uploaded_image" not in st.session_state:
 if "downloaded" not in st.session_state:
     st.session_state.downloaded = False
 
+# Reset session state manually when uploading a new file
+def reset_session():
+    st.session_state.uploaded_image = None
+    st.session_state.downloaded = False
+
 # Upload the image
-uploaded_image = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"], key="file_uploader")
+uploaded_image = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"], key="file_uploader", on_change=reset_session)
 
 if uploaded_image is not None:
     st.session_state.uploaded_image = uploaded_image  # Store the uploaded image in session state
@@ -80,11 +85,7 @@ if st.session_state.uploaded_image:
         processed_image_pil.save(buf, format="PNG", dpi=(300, 300))  # Save at 300 DPI
         st.download_button(label="Download Processed Image at 300 DPI", data=buf.getvalue(), file_name="processed_image_300dpi.png", mime="image/png")
 
-        # Reset session state to clear file uploader and other inputs
-        st.session_state.uploaded_image = None
-        st.session_state.downloaded = True
-
-        # Manually clear file uploader by reloading the page or resetting states
-        st.experimental_set_query_params()
+        # Clear session state manually after download
+        reset_session()
 else:
     st.warning("Please upload an image to proceed.")
