@@ -4,12 +4,11 @@ from PIL import Image
 import streamlit as st
 import matplotlib.pyplot as plt
 
-# Load pre-trained Pix2Pix model from an alternative source
+# Load the CycleGAN or Pix2Pix model from PyTorch Hub
 @st.cache(allow_output_mutation=True)
 def load_model():
-    # Load the model from an alternative repository
-    repo_or_dir = 'https://github.com/phillipi/pix2pix'
-    model = torch.hub.load(repo_or_dir, 'pix2pix', pretrained=True)
+    # For Pix2Pix or CycleGAN, we need to specify the task and use 'pretrained=True'
+    model = torch.hub.load('junyanz/pytorch-CycleGAN-and-pix2pix', 'pix2pix', pretrained=True, model='facades')
     model.eval()  # Set the model to evaluation mode
     return model
 
@@ -38,7 +37,8 @@ if uploaded_file is not None:
     
     # Generate the sketch using Pix2Pix
     with torch.no_grad():
-        sketch_image = model.inference(img_tensor)
+        output = model(img_tensor)  # Updated call to match the new model
+        sketch_image = output[0]  # Taking the first element if multiple are returned
     
     # Convert the tensor to an image
     sketch_image = (sketch_image.squeeze().permute(1, 2, 0) + 1) / 2  # Denormalize to [0, 1] range
