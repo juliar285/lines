@@ -6,7 +6,6 @@ from io import BytesIO
 import matplotlib.pyplot as plt
 import os
 
- Function to process the image
 def process_image(uploaded_image, thickness=0.5, upscale_factor=2):
     # Convert the uploaded image to an OpenCV format
     file_bytes = np.asarray(bytearray(uploaded_image.read()), dtype=np.uint8)
