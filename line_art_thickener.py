@@ -42,13 +42,11 @@ def process_image(uploaded_image, thickness=0.5, upscale_factor=2):
 st.title("Line Art Thickener with 300 DPI Output")
 st.write("Upload your line art, adjust the line thickness, and ensure the final image is saved at 300 DPI!")
 
-# Function to reset the uploaded image
-def reset_upload():
-    if 'uploaded_image' in st.session_state:
-        del st.session_state['uploaded_image']  # Remove uploaded image from session state
+# Create an empty placeholder for the file uploader
+uploader_placeholder = st.empty()
 
-# Store the uploaded image in session state to manage it
-uploaded_image = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"], key="uploaded_image")
+# Upload the image using the placeholder
+uploaded_image = uploader_placeholder.file_uploader("Upload an image", type=["png", "jpg", "jpeg"])
 
 if uploaded_image is not None:
     # Slider to control line thickness
@@ -71,10 +69,11 @@ if uploaded_image is not None:
         buf = BytesIO()
         processed_image_pil = Image.fromarray(cv2.cvtColor(processed_image, cv2.COLOR_BGR2RGB))
         processed_image_pil.save(buf, format="PNG", dpi=(300, 300))  # Save at 300 DPI
-        st.download_button(label="Download Processed Image at 300 DPI", data=buf.getvalue(), file_name="processed_image_300dpi.png", mime="image/png")
         
-        # Clear the uploaded image after download to reset the uploader
-        reset_upload()
+        # Add download button
+        st.download_button(label="Download Processed Image at 300 DPI", data=buf.getvalue(), file_name="processed_image_300dpi.png", mime="image/png")
 
+        # After the download, clear the file uploader to reset the UI
+        uploader_placeholder.empty()  # Clears the uploader and resets the app
 else:
     st.warning("Please upload an image to proceed.")
