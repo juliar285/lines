@@ -1,13 +1,12 @@
 import streamlit as st
-from PIL import Image
+from PIL import Image, ImageOps
 import vtracer
 import io
 import numpy as np
 import cv2
-import cairosvg  # For handling SVG images
 
 # Streamlit app layout
-st.title("Image to Color SVG Converter with Adjustable Pencil Sketch Effect")
+st.title("Image to Color SVG Converter with Optional Pencil Sketch Effect on SVG")
 
 # Step 1: Upload an image
 uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "png", "svg"])
@@ -51,7 +50,16 @@ if uploaded_file is not None:
     apply_sketch = st.checkbox("Apply Pencil Sketch Effect to SVG", value=False)
 
     if apply_sketch:
-        # Step 6: Adjust pencil sketch parameters using sliders
+        # Step 6: Convert SVG string to an image (using Pillow)
+        svg_image = Image.open(io.BytesIO(img_bytes))
+
+        # Convert the image to grayscale
+        gray_image = ImageOps.grayscale(svg_image)
+
+        # Convert the grayscale image to OpenCV format for processing
+        open_cv_image = np.array(gray_image)
+
+        # Step 7: Adjust pencil sketch parameters using sliders
         st.sidebar.title("Pencil Sketch Parameters")
 
         # Adjust Gaussian blur level
@@ -63,21 +71,11 @@ if uploaded_file is not None:
         # Adjust noise reduction strength (bilateral filter)
         noise_reduction = st.sidebar.slider("Noise Reduction Strength", 1, 100, 50)
 
-        # Step 7: Convert the SVG to PNG for processing
-        png_image = cairosvg.svg2png(bytestring=svg_str)
-
-        # Convert PNG to OpenCV format for processing
-        nparr = np.frombuffer(png_image, np.uint8)
-        open_cv_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-
-        # Convert the image to grayscale
-        gray_image = cv2.cvtColor(open_cv_image, cv2.COLOR_BGR2GRAY)
-
         # Apply pencil sketch effect using OpenCV
-        inverted_image = 255 - gray_image
+        inverted_image = 255 - open_cv_image
         blurred = cv2.GaussianBlur(inverted_image, (blur_amount, blur_amount), 0)
         inverted_blur = 255 - blurred
-        pencil_sketch_image = cv2.divide(gray_image, inverted_blur, scale=256.0)
+        pencil_sketch_image = cv2.divide(open_cv_image, inverted_blur, scale=256.0)
 
         # Optionally apply noise reduction using bilateral filtering
         pencil_sketch_image = cv2.bilateralFilter(pencil_sketch_image, d=9, sigmaColor=noise_reduction, sigmaSpace=noise_reduction)
