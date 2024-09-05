@@ -66,15 +66,17 @@ if uploaded_image is not None:
         buf = BytesIO()
         processed_image_pil = Image.fromarray(cv2.cvtColor(processed_image, cv2.COLOR_BGR2RGB))
         processed_image_pil.save(buf, format="PNG", dpi=(300, 300))  # Save at 300 DPI
-        st.download_button(label="Download Processed Image at 300 DPI", data=buf.getvalue(), file_name="processed_image_300dpi.png", mime="image/png")
-    else:
-        st.warning("You haven't accepted the processed image yet.")
-        
-if 'count' not in st.session_state:
-    st.session_state.count = 0
 
-increment = st.download_button
-if increment:
-    st.session_state.count += 1
+        # Download button
+        download_button = st.download_button(
+            label="Download Processed Image at 300 DPI",
+            data=buf.getvalue(),
+            file_name="processed_image_300dpi.png",
+            mime="image/png"
+        )
 
-st.rerun()
+        # If the download button is clicked, reload the app
+        if download_button:
+            # Clear session state to reset the app
+            st.session_state.clear()
+            st.rerun()
