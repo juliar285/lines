@@ -97,6 +97,6 @@ if uploaded_image is not None:
             if download_clicked:
                 st.success("Download complete! Resetting the app...")
                 reset_session_state()  # Reset the session state to clear the file uploader and image data
-                st.experimental_rerun()  # Refresh the app after clearing the session state
+                st.write(f'<script>window.location.reload();</script>', unsafe_allow_html=True)
 else:
     st.warning("Please upload an image to proceed.")
