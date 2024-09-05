@@ -24,9 +24,9 @@ if uploaded_file is not None:
     # Convert the image bytes to SVG using vtracer
     svg_str = vtracer.convert_raw_image_to_svg(img_bytes, img_format='png')
 
-    # Display the SVG output
+    # Display the SVG output using HTML embedding
     st.write("### Converted SVG:")
-    st.image(svg_str, format='svg')
+    st.write(f'<div>{svg_str}</div>', unsafe_allow_html=True)
 
     # Download option for the generated SVG
     st.download_button(label="Download SVG", data=svg_str, file_name="output.svg", mime="image/svg+xml")
