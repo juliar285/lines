@@ -6,6 +6,13 @@ from io import BytesIO
 import matplotlib.pyplot as plt
 import os
 
+import cv2
+import numpy as np
+import streamlit as st
+from PIL import Image
+from io import BytesIO
+
+# Function to process the image
 def process_image(uploaded_image, thickness=0.5, upscale_factor=2):
     # Convert the uploaded image to an OpenCV format
     file_bytes = np.asarray(bytearray(uploaded_image.read()), dtype=np.uint8)
@@ -44,6 +51,7 @@ st.write("Upload your line art, adjust the line thickness, and ensure the final 
 # Create placeholders for the file uploader and images
 uploader_placeholder = st.empty()
 image_placeholder = st.empty()
+download_placeholder = st.empty()
 
 # Upload the image using the placeholder
 uploaded_image = uploader_placeholder.file_uploader("Upload an image", type=["png", "jpg", "jpeg"])
@@ -71,15 +79,19 @@ if uploaded_image is not None:
         processed_image_pil.save(buf, format="PNG", dpi=(300, 300))  # Save at 300 DPI
 
         # Show the download button
-        download_button_clicked = st.download_button(
+        download_placeholder.download_button(
             label="Download Processed Image at 300 DPI", 
             data=buf.getvalue(), 
             file_name="processed_image_300dpi.png", 
             mime="image/png"
         )
-        
-        # Only clear the UI after the download button has been clicked
-        if download_button_clicked:
-            st.success("Download complete! Resetting the app...")
+
+        # Clear the UI only after the download button is clicked
+        if st.session_state.get('downloaded', False):
             uploader_placeholder.empty()  # Clears the uploader
             image_placeholder.empty()    # Clears the image
+            download_placeholder.empty()  # Clears the download button
+            st.session_state['downloaded'] = False
+else:
+    st.warning("Please upload an image to proceed.")
+
