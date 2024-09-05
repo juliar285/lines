@@ -38,8 +38,10 @@ def process_image(uploaded_image, thickness=0.5, upscale_factor=2):
     return result_image, image  # Return the processed and original images
 
 # Streamlit UI
-st.title("Line Art Thickener with 300 DPI Output")
-st.write("Upload your line art, adjust the line thickness, and ensure the final image is saved at 300 DPI!")
+st.title("Bold and Consistent Line Art")
+st.write("Use this tool if you would like to modify existing line art to have thicker lines.  There are options to increase line thickness and upscaling factors")
+st.write("Complex Images may need adjustments using the sliders, simplier pictures will require less adjustments.  Good ratios are:  .5 Line Thickness and Level 4 Upscale factor)
+st.write("Ro use this tool do the following: 1. Upload your line art, 2. adjust the line thickness. 3. Accept if you approve of the image (if not then make more adjustments), 4. After Acceptance the application will prepare your image in 300 DPI format and give you a link to download.  will  and ensure the final image is saved at 300 DPI!")
 
 # Upload the image
 uploaded_image = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"])
