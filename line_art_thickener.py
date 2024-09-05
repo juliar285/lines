@@ -68,7 +68,5 @@ if uploaded_image is not None:
         processed_image_pil.save(buf, format="PNG", dpi=(300, 300))  # Save at 300 DPI
         st.download_button(label="Download Processed Image at 300 DPI", data=buf.getvalue(), file_name="processed_image_300dpi.png", mime="image/png")
 
-        # After the download button is clicked, trigger the page reload automatically
-        st.rerun()
     else:
         st.warning("You haven't accepted the processed image yet.")
