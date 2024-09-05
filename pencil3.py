@@ -6,7 +6,7 @@ import numpy as np
 import cv2
 
 # Streamlit app layout
-st.title("Direct SVG Conversion with Adjustable Threshold and Noise Reduction")
+st.title("SVG Conversion with Edge Detection and Contour Drawing")
 
 # Image upload
 uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "png"])
@@ -22,40 +22,36 @@ if uploaded_file is not None:
     image.save(img_byte_array, format='PNG')
     img_bytes = img_byte_array.getvalue()
 
-    # Step 2: Convert image bytes to OpenCV format for processing
+    # Step 2: Convert the image to OpenCV format
     open_cv_image = np.array(image)
     open_cv_image = cv2.cvtColor(open_cv_image, cv2.COLOR_RGBA2RGB)
 
-    # Step 3: Apply pencil sketch effect using OpenCV
-    gray_image = cv2.cvtColor(open_cv_image, cv2.COLOR_BGR2GRAY)
+    # Step 3: Apply Canny Edge Detection
+    edges = cv2.Canny(open_cv_image, 100, 200)
 
-    # Apply Gaussian blur to invert and soften
-    inverted_image = 255 - gray_image
-    blurred = cv2.GaussianBlur(inverted_image, (15, 15), 0)
-    inverted_blur = 255 - blurred
-    pencil_sketch_image = cv2.divide(gray_image, inverted_blur, scale=256.0)
+    # Step 4: Find contours based on the edges
+    contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-    # Step 4: Apply a Bilateral Filter to reduce noise while preserving details
-    #bilateral_filtered = cv2.bilateralFilter(pencil_sketch_image, d=5, sigmaColor=50, sigmaSpace=50)
+    # Step 5: Draw the contours on a blank image (same size as original)
+    contour_image = np.zeros_like(gray_image)  # Create a blank image
+    cv2.drawContours(contour_image, contours, -1, (255), thickness=2)  # Draw contours in white
 
-    # Step 5: Add a threshold slider for fine-tuning the binary conversion
-    threshold_value = st.slider("Threshold Value for Binary Conversion", 50, 255, 244)
+    # Step 6: Apply a threshold slider to fine-tune the binary conversion
+    threshold_value = st.slider("Threshold Value for Edge Detection", 50, 255, 200)
+    _, binary_image = cv2.threshold(contour_image, threshold_value, 255, cv2.THRESH_BINARY)
 
-    # Apply the final threshold to convert to black-and-white (binary)
-    _, binary_image = cv2.threshold(pencil_sketch_image, threshold_value, 255, cv2.THRESH_BINARY)
-
-    # Step 6: Convert the final binary image to bytes for SVG conversion
+    # Step 7: Convert the contour-drawn image back to PNG format
     sketch_pil_image = Image.fromarray(binary_image)
     img_byte_array = io.BytesIO()
     sketch_pil_image.save(img_byte_array, format='PNG')
     img_bytes = img_byte_array.getvalue()
 
-    # Step 7: Convert the processed image to SVG using vtracer
+    # Step 8: Convert the final image with contours to SVG using vtracer
     svg_str = vtracer.convert_raw_image_to_svg(img_bytes, img_format='png')
 
-    # Step 8: Display the final SVG output with adjustable threshold and noise reduction
-    st.write("### Pencil Sketch SVG with Adjustable Threshold and Noise Reduction:")
+    # Step 9: Display the SVG output
+    st.write("### Contour-drawn SVG (with Adjustable Edge Detection):")
     st.write(f'<div>{svg_str}</div>', unsafe_allow_html=True)
 
     # Provide a download option for the SVG file
-    st.download_button(label="Download Pencil Sketch (SVG)", data=svg_str, file_name="pencil_sketch.svg", mime="image/svg+xml")
+    st.download_button(label="Download SVG", data=svg_str, file_name="contour_sketch.svg", mime="image/svg+xml")
