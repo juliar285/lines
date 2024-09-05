@@ -91,4 +91,4 @@ if uploaded_image is not None:
 
         # After download, trigger reset
         if download_clicked:
-            st.session_state['reset'] = True  # Set reset flag to true
+            st.session_state.reset = True  # Set reset flag to true
