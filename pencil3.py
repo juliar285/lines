@@ -27,13 +27,15 @@ if uploaded_file is not None:
     # Select color mode
     colormode = st.sidebar.selectbox("Color Mode", ["color", "binary"])
 
-    # Adjust path precision (suggested range 1 to 10)
+    # Adjust path precision
     path_precision = st.sidebar.slider("Path Precision", 1, 10, 6)
 
-    # Adjust color precision (suggested range 1 to 10)
-    color_precision = st.sidebar.slider("Color Precision", 1, 10, 6)
+    # Adjust binary threshold for binary mode (only used if binary mode is selected)
+    if colormode == "binary":
+        binary_threshold_value = st.sidebar.slider("Binary Threshold", 0, 255, 128)
 
-    # Adjust layer difference (suggested range 1 to 50)
+    # Adjust thresholds for details
+    color_precision = st.sidebar.slider("Color Precision", 1, 10, 6)
     layer_difference = st.sidebar.slider("Layer Difference", 1, 50, 16)
 
     # Only apply the pencil sketch effect if "color" mode is selected
@@ -41,13 +43,13 @@ if uploaded_file is not None:
         # Sliders for pencil sketch parameters
         st.sidebar.title("Pencil Sketch Parameters")
 
-        # Adjust Gaussian blur level (suggested range 1 to 50)
+        # Adjust Gaussian blur level
         blur_amount = st.sidebar.slider("Blur Amount", 1, 50, 21, step=2)
 
         # Adjust threshold for sketch (suggested range 0 to 255)
         threshold_value = st.sidebar.slider("Sketch Threshold", 0, 255, 128)
 
-        # Noise reduction strength (using bilateral filter, range 1 to 100)
+        # Noise reduction strength (using bilateral filter)
         noise_reduction = st.sidebar.slider("Noise Reduction Strength", 1, 100, 50)
 
         # Convert the image to OpenCV format
@@ -73,6 +75,23 @@ if uploaded_file is not None:
         sketch_pil_image = Image.fromarray(binary_sketch)
         img_byte_array = io.BytesIO()
         sketch_pil_image.save(img_byte_array, format='PNG')
+        img_bytes = img_byte_array.getvalue()
+
+    elif colormode == "binary":
+        # Convert the image to OpenCV format
+        open_cv_image = np.array(image)
+        open_cv_image = cv2.cvtColor(open_cv_image, cv2.COLOR_RGBA2RGB)
+
+        # Convert the image to grayscale
+        gray_image = cv2.cvtColor(open_cv_image, cv2.COLOR_BGR2GRAY)
+
+        # Apply binary thresholding (this simulates a binary threshold for vtracer's binary mode)
+        _, binary_image = cv2.threshold(gray_image, binary_threshold_value, 255, cv2.THRESH_BINARY)
+
+        # Convert the binary image to bytes for SVG conversion
+        binary_pil_image = Image.fromarray(binary_image)
+        img_byte_array = io.BytesIO()
+        binary_pil_image.save(img_byte_array, format='PNG')
         img_bytes = img_byte_array.getvalue()
 
     # Step 3: Convert the image (or sketch) to SVG using vtracer
