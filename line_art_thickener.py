@@ -58,9 +58,8 @@ if "file_bytes" not in st.session_state:
 
 # Reset the session state for the uploader and image
 def reset_session():
-    st.session_state.uploaded_image = None
-    st.session_state.processed_image = None
-    st.session_state.file_bytes = None
+    for key in st.session_state.keys():
+        del st.session_state[key]
 
 # File uploader
 uploaded_image = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"], key="file_uploader")
@@ -106,5 +105,6 @@ if st.session_state.uploaded_image and st.session_state.file_bytes:
         # Reset button to clear session state and reset the UI
         if st.button("Reset"):
             reset_session()  # Clear session variables to reset the UI
+            st.experimental_set_query_params()  # Clear the query parameters
 else:
     st.warning("Please upload an image to proceed.")
