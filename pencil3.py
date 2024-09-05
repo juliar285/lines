@@ -47,7 +47,7 @@ if uploaded_file is not None:
     min_contour_area = st.slider("Minimum Contour Area for Noise Removal", 1, 200, 10)
 
     # Step 7: Apply noise removal using Morphological Operations (smaller kernel)
-    kernel = np.ones((1, 1), np.uint8)  # A smaller kernel for softer noise removal
+    kernel = np.ones((.1, .1), np.uint8)  # A smaller kernel for softer noise removal
     clean_image = cv2.morphologyEx(binary_image, cv2.MORPH_OPEN, kernel)
 
     # Step 8: Remove small contours based on the user-defined contour area threshold
